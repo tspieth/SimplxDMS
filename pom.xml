@@ -8,21 +8,44 @@
     <artifactId>SimplxDMS</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <javafx.version>21.0.2</javafx.version>
+        <!-- Default-Wert, falls kein Profil greift -> verhindert leere Property -->
+        <javafx.platform>linux</javafx.platform>
+        <!-- TODO: hier deine echte Hauptklasse eintragen -->
+        <main.class>gui.Main</main.class>
+    </properties>
+
     <profiles>
         <profile>
             <id>windows-profile</id>
-            <activation><os><family>windows</family></os></activation>
-            <properties><javafx.platform>win</javafx.platform></properties>
+            <activation>
+                <os><family>windows</family></os>
+            </activation>
+            <properties>
+                <javafx.platform>win</javafx.platform>
+            </properties>
         </profile>
         <profile>
             <id>mac-profile</id>
-            <activation><os><family>mac</family></os></activation>
-            <properties><javafx.platform>mac</javafx.platform></properties>
+            <activation>
+                <os><family>mac</family></os>
+            </activation>
+            <properties>
+                <javafx.platform>mac</javafx.platform>
+            </properties>
         </profile>
         <profile>
             <id>linux-profile</id>
-            <activation><os><family>unix</family></os></activation>
-            <properties><javafx.platform>linux</javafx.platform></properties>
+            <activation>
+                <os><family>unix</family></os>
+            </activation>
+            <properties>
+                <javafx.platform>linux</javafx.platform>
+            </properties>
         </profile>
     </profiles>
 
@@ -30,7 +53,13 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>21.0.2</version>
+            <version>${javafx.version}</version>
+            <classifier>${javafx.platform}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
             <classifier>${javafx.platform}</classifier>
         </dependency>
     </dependencies>
@@ -44,11 +73,13 @@
                 <executions>
                     <execution>
                         <phase>package</phase>
-                        <goals><goal>shade</goal></goals>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>gui.Main</mainClass>
+                                    <mainClass>${main.class}</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -57,12 +88,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.platform>linux</javafx.platform>
-    </properties>
 
 </project>
