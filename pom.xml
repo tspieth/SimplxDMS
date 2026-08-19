@@ -15,7 +15,7 @@
         <javafx.version>21.0.2</javafx.version>
         <!-- Default-Wert, falls kein Profil greift -> verhindert leere Property -->
         <javafx.platform>linux</javafx.platform>
-        <main.class>gui.Main</main.class>
+        <main.class>gui.Launcher</main.class>
     </properties>
 
     <profiles>
