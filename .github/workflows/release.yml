@@ -33,10 +33,10 @@ jobs:
           jpackage --input target/ \
             --name MeineApp \
             --main-jar meineapp-1.0.jar \
-            --main-class com.deinname.Main \
+            --main-class gui.Main \
             --type ${{ matrix.type }} \
             --app-version 1.0 \
-            --vendor "Dein Name" \
+            --vendor "Timon Spieth" \
             --dest dist/
 
       - name: Installer zum Release hochladen
