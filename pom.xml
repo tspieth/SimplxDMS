@@ -15,7 +15,6 @@
         <javafx.version>21.0.2</javafx.version>
         <!-- Default-Wert, falls kein Profil greift -> verhindert leere Property -->
         <javafx.platform>linux</javafx.platform>
-        <!-- TODO: hier deine echte Hauptklasse eintragen -->
         <main.class>gui.Main</main.class>
     </properties>
 
