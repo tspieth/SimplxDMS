@@ -1,0 +1,45 @@
+name: Build Installers
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            type: msi
+          - os: macos-latest
+            type: dmg
+          - os: ubuntu-latest
+            type: deb
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build JAR mit Maven
+        run: mvn clean package
+
+      - name: Installer mit jpackage bauen
+        run: |
+          jpackage --input target/ \
+            --name MeineApp \
+            --main-jar meineapp-1.0.jar \
+            --main-class com.deinname.Main \
+            --type ${{ matrix.type }} \
+            --app-version 1.0 \
+            --vendor "Dein Name" \
+            --dest dist/
+
+      - name: Installer zum Release hochladen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
