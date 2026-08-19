@@ -28,15 +28,23 @@ jobs:
       - name: Build JAR mit Maven
         run: mvn clean package
 
+      - name: JAR-Dateiname ermitteln
+        id: jarname
+        shell: bash
+        run: |
+          JAR_FILE=$(ls target/*.jar | grep -v original | head -n 1)
+          echo "jar=$(basename "$JAR_FILE")" >> "$GITHUB_OUTPUT"
+
       - name: Installer mit jpackage bauen
+        shell: bash
         run: |
           jpackage --input target/ \
             --name MeineApp \
-            --main-jar SimplxDMS-1.0-SNAPSHOT.jar \
-            --main-class gui.Main \
+            --main-jar ${{ steps.jarname.outputs.jar }} \
+            --main-class com.tspieth.simplxdms.Main \
             --type ${{ matrix.type }} \
             --app-version 1.0 \
-            --vendor "Timon Spieth" \
+            --vendor "Dein Name" \
             --dest dist/
 
       - name: Installer zum Release hochladen
