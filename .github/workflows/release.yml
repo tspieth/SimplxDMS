@@ -4,9 +4,13 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -41,10 +45,10 @@ jobs:
           jpackage --input target/ \
             --name MeineApp \
             --main-jar ${{ steps.jarname.outputs.jar }} \
-            --main-class com.tspieth.simplxdms.Main \
+            --main-class gui.Main \
             --type ${{ matrix.type }} \
             --app-version 1.0 \
-            --vendor "Dein Name" \
+            --vendor "Timon Spieth" \
             --dest dist/
 
       - name: Installer zum Release hochladen
