@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="gui.MainController" prefHeight="720.0" prefWidth="1200.0">
+
+    <!-- ================= TOP: TAB-LEISTE ================= -->
+    <top>
+        <HBox fx:id="tabBar" spacing="0" style="-fx-background-color: #2b2b2b;">
+            <children>
+                <ToggleButton fx:id="tabWettkampf" text="Wettkampf" onAction="#onTabWettkampfClick"
+                              maxWidth="Infinity" HBox.hgrow="ALWAYS" selected="true"
+                              prefHeight="48.0" styleClass="tab-toggle">
+                    <toggleGroup>
+                        <ToggleGroup fx:id="tabGroup"/>
+                    </toggleGroup>
+                </ToggleButton>
+                <ToggleButton fx:id="tabSchwimmerinnen" text="Schwimmerinnen" onAction="#onTabSchwimmerinnenClick"
+                              maxWidth="Infinity" HBox.hgrow="ALWAYS" toggleGroup="$tabGroup"
+                              prefHeight="48.0" styleClass="tab-toggle"/>
+                <ToggleButton fx:id="tabSchwimmer" text="Schwimmer" onAction="#onTabSchwimmerClick"
+                              maxWidth="Infinity" HBox.hgrow="ALWAYS" toggleGroup="$tabGroup"
+                              prefHeight="48.0" styleClass="tab-toggle"/>
+                <ToggleButton fx:id="tabVerein" text="Verein" onAction="#onTabVereinClick"
+                              maxWidth="Infinity" HBox.hgrow="ALWAYS" toggleGroup="$tabGroup"
+                              prefHeight="48.0" styleClass="tab-toggle"/>
+                <ToggleButton fx:id="tabEinstellungen" text="Einstellungen" onAction="#onTabEinstellungenClick"
+                              maxWidth="Infinity" HBox.hgrow="ALWAYS" toggleGroup="$tabGroup"
+                              prefHeight="48.0" styleClass="tab-toggle"/>
+            </children>
+        </HBox>
+    </top>
+
+    <!-- ================= CENTER: hier wird zur Laufzeit die jeweilige Pane per FXMLLoader reingeladen ================= -->
+    <center>
+        <StackPane fx:id="contentArea"/>
+    </center>
+
+</BorderPane>

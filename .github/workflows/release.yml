@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           jpackage --input target/ \
-            --name MeineApp \
+            --name SimplxDMS \
             --main-jar ${{ steps.jarname.outputs.jar }} \
             --main-class gui.Main \
             --type ${{ matrix.type }} \
