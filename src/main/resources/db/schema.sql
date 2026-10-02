@@ -1,0 +1,90 @@
+-- ============================================================
+-- SimplxDMS Datenbankschema
+-- Wird bei jedem App-Start automatisch ausgeführt (CREATE TABLE IF NOT EXISTS)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS verein (
+    id   INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS schwimmer (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    name          VARCHAR(100) NOT NULL,
+    vorname       VARCHAR(100) NOT NULL,
+    geburtsdatum  DATE,
+    geschlecht    VARCHAR(1) NOT NULL CHECK (geschlecht IN ('m', 'w')),
+    verein_id     INT NOT NULL,
+    FOREIGN KEY (verein_id) REFERENCES verein(id)
+);
+
+CREATE TABLE IF NOT EXISTS disziplin (
+    id       INT AUTO_INCREMENT PRIMARY KEY,
+    lage     VARCHAR(50) NOT NULL,
+    distanz  INT NOT NULL
+);
+
+-- Bekannte/gemeldete Zeiten eines Schwimmers, unabhängig vom Wettkampf
+CREATE TABLE IF NOT EXISTS leistung (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    schwimmer_id INT NOT NULL,
+    disziplin_id INT NOT NULL,
+    zeit         TIME NOT NULL,
+    datum        DATE,
+    FOREIGN KEY (schwimmer_id) REFERENCES schwimmer(id),
+    FOREIGN KEY (disziplin_id) REFERENCES disziplin(id)
+);
+
+CREATE TABLE IF NOT EXISTS wettkampf (
+    id     INT AUTO_INCREMENT PRIMARY KEY,
+    name   VARCHAR(150) NOT NULL,
+    datum  DATE
+);
+
+-- Gemeinsame Reihenfolge für Läufe UND Pausen innerhalb eines Wettkampfs
+CREATE TABLE IF NOT EXISTS programmpunkt (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    wettkampf_id  INT NOT NULL,
+    position      INT NOT NULL,
+    typ           VARCHAR(10) NOT NULL CHECK (typ IN ('LAUF', 'PAUSE')),
+    FOREIGN KEY (wettkampf_id) REFERENCES wettkampf(id),
+    UNIQUE (wettkampf_id, position)
+);
+
+CREATE TABLE IF NOT EXISTS lauf (
+    id                 INT AUTO_INCREMENT PRIMARY KEY,
+    programmpunkt_id   INT NOT NULL UNIQUE,
+    disziplin_id       INT NOT NULL,
+    FOREIGN KEY (programmpunkt_id) REFERENCES programmpunkt(id),
+    FOREIGN KEY (disziplin_id) REFERENCES disziplin(id)
+);
+
+CREATE TABLE IF NOT EXISTS pause (
+    id                 INT AUTO_INCREMENT PRIMARY KEY,
+    programmpunkt_id   INT NOT NULL UNIQUE,
+    dauer              INT NOT NULL,
+    FOREIGN KEY (programmpunkt_id) REFERENCES programmpunkt(id)
+);
+
+-- Eine DMS-Mannschaft eines Vereins bei einem bestimmten Wettkampf
+CREATE TABLE IF NOT EXISTS mannschaft (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    verein_id     INT NOT NULL,
+    wettkampf_id  INT NOT NULL,
+    bezeichnung   VARCHAR(50) NOT NULL,
+    FOREIGN KEY (verein_id) REFERENCES verein(id),
+    FOREIGN KEY (wettkampf_id) REFERENCES wettkampf(id)
+);
+
+-- Wer schwimmt tatsächlich in diesem Lauf, für welche Mannschaft, mit welchem Ergebnis
+CREATE TABLE IF NOT EXISTS start (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    lauf_id         INT NOT NULL,
+    mannschaft_id   INT NOT NULL,
+    schwimmer_id    INT NOT NULL,
+    erzielte_zeit   TIME,
+    punkte          DOUBLE,
+    FOREIGN KEY (lauf_id) REFERENCES lauf(id),
+    FOREIGN KEY (mannschaft_id) REFERENCES mannschaft(id),
+    FOREIGN KEY (schwimmer_id) REFERENCES schwimmer(id)
+);

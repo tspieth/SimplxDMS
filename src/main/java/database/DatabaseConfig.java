@@ -1,5 +1,9 @@
 package database;
 
+/**
+ * Class used to detect the distribution-specific storage location of
+ * the database file
+ */
 public class DatabaseConfig {
     public static String getDatabasePath() {
         String userHome = System.getProperty("user.home");
