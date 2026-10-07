@@ -1,7 +1,7 @@
-package dao;
+package database.dao;
 
-import model.Programmpunkt;
-import model.ProgrammpunktTyp;
+import database.model.Programmpunkt;
+import database.model.ProgrammpunktTyp;
 
 import java.sql.*;
 import java.util.ArrayList;

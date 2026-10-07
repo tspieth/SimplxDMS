@@ -1,6 +1,6 @@
-package dao;
+package database.dao;
 
-import model.Pause;
+import database.model.Pause;
 
 import java.sql.*;
 

@@ -1,6 +1,6 @@
-package dao;
+package database.dao;
 
-import model.Mannschaft;
+import database.model.Mannschaft;
 
 import java.sql.*;
 import java.util.ArrayList;

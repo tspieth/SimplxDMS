@@ -1,6 +1,6 @@
-package dao;
+package database.dao;
 
-import model.Lauf;
+import database.model.Lauf;
 
 import java.sql.*;
 

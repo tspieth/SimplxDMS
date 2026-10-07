@@ -1,6 +1,6 @@
-package dao;
+package database.dao;
 
-import model.Schwimmer;
+import database.model.Schwimmer;
 
 import java.sql.*;
 import java.util.ArrayList;

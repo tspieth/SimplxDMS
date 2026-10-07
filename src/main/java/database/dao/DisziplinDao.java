@@ -1,11 +1,15 @@
-package dao;
+package database.dao;
 
-import model.Disziplin;
+import database.model.Disziplin;
+import database.model.SchwimmLage;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DisziplinDAO is an Data Access Object used to access data related to
+ */
 public class DisziplinDao {
 
     private final Connection connection;
@@ -16,7 +20,7 @@ public class DisziplinDao {
 
     public List<Disziplin> findAll() throws SQLException {
         List<Disziplin> result = new ArrayList<>();
-        String sql = "SELECT * FROM disziplin ORDER BY distanz, lage";
+        String sql = "SELECT * FROM disziplin ORDER BY lage, distanz";
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -39,7 +43,7 @@ public class DisziplinDao {
     public void insert(Disziplin disziplin) throws SQLException {
         String sql = "INSERT INTO disziplin (lage, distanz) VALUES (?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, disziplin.getLage());
+            ps.setString(1, disziplin.getLage().name());
             ps.setInt(2, disziplin.getDistanz());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -53,7 +57,7 @@ public class DisziplinDao {
     public void update(Disziplin disziplin) throws SQLException {
         String sql = "UPDATE disziplin SET lage = ?, distanz = ? WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, disziplin.getLage());
+            ps.setString(1, disziplin.getLage().name());
             ps.setInt(2, disziplin.getDistanz());
             ps.setInt(3, disziplin.getId());
             ps.executeUpdate();
@@ -69,6 +73,6 @@ public class DisziplinDao {
     }
 
     private Disziplin mapRow(ResultSet rs) throws SQLException {
-        return new Disziplin(rs.getInt("id"), rs.getString("lage"), rs.getInt("distanz"));
+        return new Disziplin(rs.getInt("id"), SchwimmLage.fromDbValue(rs.getString("lage")), rs.getInt("distanz"));
     }
 }

@@ -21,7 +21,22 @@ CREATE TABLE IF NOT EXISTS schwimmer (
 CREATE TABLE IF NOT EXISTS disziplin (
     id       INT AUTO_INCREMENT PRIMARY KEY,
     lage     VARCHAR(50) NOT NULL,
-    distanz  INT NOT NULL
+    distanz  INT NOT NULL,
+
+    -- TO MAKE IT IMPOSSIBLE TO HAVE DOUBLES 2x (FREISTIL, 100)
+    CONSTRAINT uq_disziplin_lage_distanz UNIQUE (lage, distanz)
+);
+
+-- Table for FINA WR-Times for Genders
+CREATE TABLE IF NOT EXISTS fina_referenzzeit (
+    id      INT AUTO_INCREMENT PRIMARY KEY,
+    disziplin_id INT NOT NULL,
+    geschlecht VARCHAR(30) NOT NULL, -- Indicates the Gender MAENNLICH || WEIBLICH
+    fina_time DOUBLE NOT NULL DEFAULT 0.0,
+
+    -- TO MAKE IT IMPOSSIBLE TO HAVE DOUBLES
+    CONSTRAINT uq_disziplin_kombination UNIQUE (disziplin_id, geschlecht),
+    FOREIGN KEY (disziplin_id) REFERENCES disziplin(id)
 );
 
 -- Bekannte/gemeldete Zeiten eines Schwimmers, unabhängig vom Wettkampf

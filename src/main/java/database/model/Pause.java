@@ -1,4 +1,4 @@
-package model;
+package database.model;
 
 public class Pause {
     private int id;

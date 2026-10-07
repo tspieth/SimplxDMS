@@ -1,4 +1,4 @@
-package model;
+package database.model;
 
 public class Programmpunkt {
     private int id;

@@ -1,6 +1,6 @@
-package dao;
+package database.dao;
 
-import model.Start;
+import database.model.Start;
 
 import java.sql.*;
 import java.util.ArrayList;
