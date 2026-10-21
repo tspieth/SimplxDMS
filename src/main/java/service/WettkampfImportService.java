@@ -87,15 +87,46 @@ public class WettkampfImportService {
 
     private DsvWettkampfParser.ParsedWettkampf parseWithEncodingFallback(byte[] bytes)
             throws IOException, importer.DsvParseException {
+        if (startsWith(bytes, 0xFF, 0xFE)) {
+            return parse(decode(bytes, StandardCharsets.UTF_16LE, 2));
+        }
+        if (startsWith(bytes, 0xFE, 0xFF)) {
+            return parse(decode(bytes, StandardCharsets.UTF_16BE, 2));
+        }
+        if (startsWith(bytes, 0xEF, 0xBB, 0xBF)) {
+            return parse(decode(bytes, StandardCharsets.UTF_8, 0));
+        }
+        if (bytes.length >= 4 && bytes[1] == 0 && bytes[3] == 0) {
+            return parse(decode(bytes, StandardCharsets.UTF_16LE, 0));
+        }
+        if (bytes.length >= 4 && bytes[0] == 0 && bytes[2] == 0) {
+            return parse(decode(bytes, StandardCharsets.UTF_16BE, 0));
+        }
         try {
-            String utf8 = StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(java.nio.ByteBuffer.wrap(bytes)).toString();
-            return parse(utf8);
+            return parse(decode(bytes, StandardCharsets.UTF_8, 0));
         } catch (java.nio.charset.CharacterCodingException e) {
             return parse(new String(bytes, WINDOWS_1252));
         }
+    }
+
+    private String decode(byte[] bytes, Charset charset, int offset)
+            throws java.nio.charset.CharacterCodingException {
+        return charset.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(java.nio.ByteBuffer.wrap(bytes, offset, bytes.length - offset)).toString();
+    }
+
+    private boolean startsWith(byte[] bytes, int... prefix) {
+        if (bytes.length < prefix.length) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length; i++) {
+            if ((bytes[i] & 0xFF) != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private DsvWettkampfParser.ParsedWettkampf parse(String content)

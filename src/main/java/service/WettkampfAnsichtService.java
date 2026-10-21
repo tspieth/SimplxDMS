@@ -29,6 +29,9 @@ public class WettkampfAnsichtService {
         List<LaufZeile> rows = new ArrayList<>();
         long teamPoints = 0;
         for (var run : allRuns) {
+            if (run.geschlecht() == null) {
+                continue;
+            }
             List<StartDao.StartAnzeige> starts = mannschaft == null
                     ? List.of() : startDao.findAnzeigen(run.id(), mannschaft.getId());
             PunkteRechner.PunktErgebnis visiblePoints = null;

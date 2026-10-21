@@ -42,7 +42,7 @@ public class LaufDao {
                             rs.getInt("disziplin_id"),
                             rs.getInt("wettkampf_nr"),
                             rs.getInt("abschnitt"),
-                            Geschlecht.valueOf(rs.getString("geschlecht")),
+                            readGender(rs),
                             SchwimmLage.fromDbValue(rs.getString("lage")),
                             rs.getInt("distanz")));
                 }
@@ -71,7 +71,12 @@ public class LaufDao {
 
     private Lauf mapRow(ResultSet rs) throws SQLException {
         return new Lauf(rs.getInt("id"), rs.getInt("programmpunkt_id"), rs.getInt("disziplin_id"),
-                Geschlecht.valueOf(rs.getString("geschlecht")), rs.getInt("wettkampf_nr"), rs.getInt("abschnitt"));
+                readGender(rs), rs.getInt("wettkampf_nr"), rs.getInt("abschnitt"));
+    }
+
+    private Geschlecht readGender(ResultSet rs) throws SQLException {
+        String gender = rs.getString("geschlecht");
+        return gender == null ? null : Geschlecht.valueOf(gender);
     }
 
     public record LaufMitDisziplin(int id, int disziplinId, int wettkampfNummer, int abschnitt,

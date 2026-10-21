@@ -82,6 +82,11 @@ CREATE TABLE IF NOT EXISTS lauf (
     FOREIGN KEY (disziplin_id) REFERENCES disziplin(id)
 );
 
+-- Upgrade databases created before runs stored their gender and schedule numbers.
+ALTER TABLE lauf ADD COLUMN IF NOT EXISTS geschlecht VARCHAR(10);
+ALTER TABLE lauf ADD COLUMN IF NOT EXISTS wettkampf_nr INT;
+ALTER TABLE lauf ADD COLUMN IF NOT EXISTS abschnitt INT;
+
 CREATE TABLE IF NOT EXISTS pause (
     id                 INT AUTO_INCREMENT PRIMARY KEY,
     programmpunkt_id   INT NOT NULL UNIQUE,

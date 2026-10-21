@@ -53,9 +53,13 @@ public class DsvWettkampfParser {
                 if (line.isEmpty()) {
                     continue;
                 }
-                if (line.startsWith("FORMAT:")) {
-                    validFormat = line.startsWith("FORMAT: Wettkampfdefinitionsliste;7");
-                } else if (line.startsWith("ABSCHNITT:")) {
+                int colon = line.indexOf(':');
+                String tag = colon < 0 ? "" : line.substring(0, colon).trim().toUpperCase(Locale.ROOT);
+                if (tag.equals("FORMAT")) {
+                    validFormat = line.substring(colon + 1).trim()
+                            .regionMatches(true, 0, "Wettkampfdefinitionsliste;7", 0,
+                                    "Wettkampfdefinitionsliste;7".length());
+                } else if (tag.equals("ABSCHNITT")) {
                     String[] values = fields(line);
                     if (values.length < 2) {
                         throw new DsvParseException(lineNumber, "Abschnitt ohne Datum.");
@@ -69,7 +73,7 @@ public class DsvWettkampfParser {
                     } catch (NumberFormatException | DateTimeParseException e) {
                         throw new DsvParseException(lineNumber, "Ungültige Abschnittsnummer oder Datum.", e);
                     }
-                } else if (line.startsWith("WETTKAMPF:")) {
+                } else if (tag.equals("WETTKAMPF")) {
                     String[] values = fields(line);
                     if (values.length < 8) {
                         throw new DsvParseException(lineNumber, "WETTKAMPF-Zeile enthält zu wenige Felder.");
@@ -89,7 +93,7 @@ public class DsvWettkampfParser {
                     } catch (NumberFormatException e) {
                         throw new DsvParseException(lineNumber, "Ungültige Nummer, Abschnittsnummer oder Distanz.", e);
                     }
-                } else if (line.startsWith("PAUSE:")) {
+                } else if (tag.equals("PAUSE")) {
                     String[] values = fields(line);
                     String duration = null;
                     for (int index = values.length - 1; index >= 0; index--) {
