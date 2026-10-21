@@ -72,12 +72,14 @@ public class SchwimmerCsvImportService {
                 boolean hasIdentity = !fields[0].isEmpty() || !fields[1].isEmpty()
                         || !fields[2].isEmpty() || !fields[3].isEmpty();
                 if (hasIdentity) {
-                    if (fields[0].isEmpty() || fields[1].isEmpty() || fields[2].isEmpty() || fields[3].isEmpty()) {
+                    //Birthyear not necessary
+                    if (fields[0].isEmpty() || fields[1].isEmpty() || fields[2].isEmpty() ) {
                         throw invalidRow(rowNumber,
-                                "Name, Vorname, Geschlecht und Geburtsjahr müssen gemeinsam angegeben sein.");
+                                "Name, Vorname, Geschlecht  müssen gemeinsam angegeben sein.");
                     }
+
                     current = new ImportSchwimmerBuilder(fields[0], fields[1], parseGender(fields[2], rowNumber),
-                            parseBirthDate(fields[3], rowNumber));
+                            (fields[3] != "" ? parseBirthDate(fields[3], rowNumber): LocalDate.of(1999, 1, 1)));
                     result.add(current);
                 } else if (current == null) {
                     throw invalidRow(rowNumber, "Eine Strecke ist angegeben, bevor ein Schwimmer definiert wurde.");
@@ -177,6 +179,7 @@ public class SchwimmerCsvImportService {
     }
 
     private LocalDate parseBirthDate(String value, int rowNumber) throws IOException {
+        //Wenn kein Geburtsjahr angegeben soll dieses Standard geburtsjahr angegeben sein
         try {
             int year = Integer.parseInt(value);
             if (year < 0) {
