@@ -3,6 +3,7 @@ package database.dao;
 import database.model.Disziplin;
 import database.model.FinaReferenceTime;
 import database.model.Geschlecht;
+import database.model.SchwimmLage;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -48,6 +49,34 @@ public class FinaReferenceTimeDAO {
             ps.setInt(2, disziplin.getId());
             ps.setString(3, gender.name());
             ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Method used to save fina times from csv file
+     *
+     * @param lage
+     * @param distanz
+     * @param geschlecht
+     * @param time
+     * @throws SQLException
+     */
+    public void insertRefTime(SchwimmLage lage, int distanz, Geschlecht geschlecht, double time) throws SQLException {
+        String sql = "INSERT INTO fina_referenzzeit (disziplin_id, geschlecht, fina_time) " +
+                "SELECT id, ?, ? FROM disziplin WHERE lage = ? AND distanz = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            // Parameter für das SELECT-Konstrukt
+            ps.setString(1, geschlecht.name()); // z. B. "MAENNLICH"
+            ps.setDouble(2, time);              // z. B. 46.86
+            ps.setString(3, lage.name());       // z. B. "FREISTIL"
+            ps.setInt(4, distanz);              // z. B. 100
+
+            int rowsAffected = ps.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new SQLException("Keine passende Disziplin für " + lage + " " + distanz + "m gefunden!");
+            }
         }
     }
 

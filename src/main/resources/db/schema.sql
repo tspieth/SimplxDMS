@@ -5,7 +5,8 @@
 
 CREATE TABLE IF NOT EXISTS verein (
     id   INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(150) NOT NULL UNIQUE
+    name VARCHAR(150) NOT NULL UNIQUE,
+    farbe VARCHAR(7) NOT NULL DEFAULT '#1E90FF'
 );
 
 CREATE TABLE IF NOT EXISTS schwimmer (
@@ -44,11 +45,15 @@ CREATE TABLE IF NOT EXISTS leistung (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     schwimmer_id INT NOT NULL,
     disziplin_id INT NOT NULL,
-    zeit         TIME NOT NULL,
+    zeit         TIME(3) NOT NULL,
     datum        DATE,
     FOREIGN KEY (schwimmer_id) REFERENCES schwimmer(id),
     FOREIGN KEY (disziplin_id) REFERENCES disziplin(id)
 );
+
+-- Upgrade existing installations without changing already stored club colors.
+ALTER TABLE verein ADD COLUMN IF NOT EXISTS farbe VARCHAR(7) NOT NULL DEFAULT '#1E90FF';
+ALTER TABLE leistung ALTER COLUMN zeit TIME(3);
 
 CREATE TABLE IF NOT EXISTS wettkampf (
     id     INT AUTO_INCREMENT PRIMARY KEY,

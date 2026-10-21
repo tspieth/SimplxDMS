@@ -48,7 +48,7 @@ public class LeistungDao {
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, leistung.getSchwimmerId());
             ps.setInt(2, leistung.getDisziplinId());
-            ps.setTime(3, Time.valueOf(leistung.getZeit()));
+            ps.setObject(3, leistung.getZeit());
             ps.setDate(4, leistung.getDatum() != null ? Date.valueOf(leistung.getDatum()) : null);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -56,6 +56,36 @@ public class LeistungDao {
                     leistung.setId(keys.getInt(1));
                 }
             }
+        }
+    }
+
+    /**
+     * Updates the discipline, time, and date of an existing best time.
+     *
+     * @param leistung updated best-time data
+     * @throws SQLException if the update fails
+     */
+    public void update(Leistung leistung) throws SQLException {
+        String sql = "UPDATE leistung SET disziplin_id = ?, zeit = ?, datum = ? WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, leistung.getDisziplinId());
+            ps.setObject(2, leistung.getZeit());
+            ps.setDate(3, leistung.getDatum() != null ? Date.valueOf(leistung.getDatum()) : null);
+            ps.setInt(4, leistung.getId());
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Deletes every best time belonging to a swimmer.
+     *
+     * @param schwimmerId swimmer database ID
+     * @throws SQLException if the delete fails
+     */
+    public void deleteBySchwimmer(int schwimmerId) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM leistung WHERE schwimmer_id = ?")) {
+            ps.setInt(1, schwimmerId);
+            ps.executeUpdate();
         }
     }
 
@@ -73,7 +103,7 @@ public class LeistungDao {
                 rs.getInt("id"),
                 rs.getInt("schwimmer_id"),
                 rs.getInt("disziplin_id"),
-                rs.getTime("zeit").toLocalTime(),
+                rs.getObject("zeit", java.time.LocalTime.class),
                 datum != null ? datum.toLocalDate() : null
         );
     }

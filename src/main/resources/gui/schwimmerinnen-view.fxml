@@ -6,9 +6,10 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="gui.controller.SwimmerController" prefHeight="672.0" prefWidth="1200.0">
+            fx:controller="gui.controller.FemaleSwimmerController" prefHeight="672.0" prefWidth="1200.0">
 
     <center>
         <TableView fx:id="schwimmerTableView" BorderPane.alignment="CENTER">
@@ -16,6 +17,7 @@
                 <TableColumn fx:id="colSchwimmerName" text="Name" prefWidth="200.0"/>
                 <TableColumn fx:id="colSchwimmerVerein" text="Verein" prefWidth="200.0"/>
                 <TableColumn fx:id="colSchwimmerJahrgang" text="Jahrgang" prefWidth="100.0"/>
+                <TableColumn fx:id="colAktionen" text="Aktionen" prefWidth="240.0"/>
             </columns>
         </TableView>
     </center>
@@ -26,12 +28,8 @@
                 <Insets top="10" right="10" bottom="10" left="10"/>
             </padding>
             <children>
-                <Button fx:id="btnSchwimmerBearbeiten" text="Bearbeiten"
-                        onAction="#onSchwimmerBearbeitenClick"/>
-                <Button fx:id="btnSchwimmerNeu" text="Neu erstellen"
-                        onAction="#onSchwimmerNeuClick"/>
-                <Button fx:id="btnSchwimmerEinlesen" text="Datei einlesen"
-                        onAction="#onSchwimmerEinlesenClick"/>
+                <Label fx:id="lblHinweis" HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnSchwimmerNeu" text="Erstellen"/>
             </children>
         </HBox>
     </bottom>

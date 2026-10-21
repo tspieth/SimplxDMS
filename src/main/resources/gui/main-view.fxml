@@ -5,9 +5,10 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.Label?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="gui.MainController" prefHeight="720.0" prefWidth="1200.0">
+            fx:id="mainRoot" fx:controller="gui.MainController" prefHeight="720.0" prefWidth="1200.0">
 
     <!-- ================= TOP: TAB-LEISTE ================= -->
     <top>
@@ -40,5 +41,14 @@
     <center>
         <StackPane fx:id="contentArea"/>
     </center>
+
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" style="-fx-background-color: #eeeeee;">
+            <children>
+                <Label fx:id="selectedClubLabel" text="Kein Verein ausgewählt"
+                       style="-fx-background-color: #555555; -fx-text-fill: white; -fx-padding: 8 12 8 12;"/>
+            </children>
+        </HBox>
+    </bottom>
 
 </BorderPane>

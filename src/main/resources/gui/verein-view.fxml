@@ -21,6 +21,7 @@
                     </padding>
                     <children>
                         <Label text="Schwimmer/innen des Vereins" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblVereinSchwimmerHinweis" wrapText="true"/>
                         <ListView fx:id="vereinSchwimmerListView" prefHeight="600.0"/>
                     </children>
                 </VBox>
@@ -36,15 +37,16 @@
             </padding>
             <children>
                 <Label text="Verein auswählen" style="-fx-font-weight: bold;"/>
+                <Label fx:id="lblVereineHinweis" wrapText="true"/>
                 <ScrollPane fitToWidth="true" prefHeight="300.0">
                     <content>
                         <ListView fx:id="vereinAuswahlListView" prefHeight="290.0"/>
                     </content>
                 </ScrollPane>
-                <Button fx:id="btnVereinNeu" text="Neuen Verein erstellen"
+                <Button fx:id="btnVereinNeu" text="Verein erstellen"
                         onAction="#onVereinNeuClick" maxWidth="Infinity"/>
                 <Button fx:id="btnVereinBearbeiten" text="Verein bearbeiten"
-                        onAction="#onVereinBearbeitenClick" maxWidth="Infinity"/>
+                        maxWidth="Infinity"/>
             </children>
         </VBox>
     </right>

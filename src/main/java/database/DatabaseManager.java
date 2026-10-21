@@ -1,5 +1,7 @@
 package database;
 
+import database.dao.DisziplinDao;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -51,6 +53,7 @@ public class DatabaseManager {
         String url = "jdbc:h2:file:" + dbPath + ";AUTO_SERVER=TRUE";
         connection = DriverManager.getConnection(url, "sa", "");
         initSchema();
+        new DisziplinDao(connection).initDefaultDisziplinen();
     }
 
     /**

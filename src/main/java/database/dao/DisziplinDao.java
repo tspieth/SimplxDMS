@@ -18,6 +18,65 @@ public class DisziplinDao {
         this.connection = connection;
     }
 
+    /**
+     * Method to insert all the disziplines :)
+     * Expected to be executed once when starting
+     *
+     * @throws SQLException
+     */
+    public void initDefaultDisziplinen() throws SQLException {
+        List<Disziplin> defaultDisziplinen = List.of(
+                // Freistil
+                new Disziplin(0, SchwimmLage.FREISTIL, 50),
+                new Disziplin(0, SchwimmLage.FREISTIL, 100),
+                new Disziplin(0, SchwimmLage.FREISTIL, 200),
+                new Disziplin(0, SchwimmLage.FREISTIL, 400),
+                new Disziplin(0, SchwimmLage.FREISTIL, 800),
+                new Disziplin(0, SchwimmLage.FREISTIL, 1500),
+
+                // Brust
+                new Disziplin(0, SchwimmLage.BRUST, 50),
+                new Disziplin(0, SchwimmLage.BRUST, 100),
+                new Disziplin(0, SchwimmLage.BRUST, 200),
+
+                // Rücken
+                new Disziplin(0, SchwimmLage.RUECKEN, 50),
+                new Disziplin(0, SchwimmLage.RUECKEN, 100),
+                new Disziplin(0, SchwimmLage.RUECKEN, 200),
+
+                // Schmetterling
+                new Disziplin(0, SchwimmLage.SCHMETTERLING, 50),
+                new Disziplin(0, SchwimmLage.SCHMETTERLING, 100),
+                new Disziplin(0, SchwimmLage.SCHMETTERLING, 200),
+
+                // Lagen
+                new Disziplin(0, SchwimmLage.LAGEN, 100),
+                new Disziplin(0, SchwimmLage.LAGEN, 200),
+                new Disziplin(0, SchwimmLage.LAGEN, 400)
+        );
+
+        // Fügt den Datensatz nur ein, wenn noch keine Zeile mit gleicher Lage und Distanz existiert
+        String sql = "INSERT INTO disziplin (lage, distanz) " +
+                "SELECT ?, ? WHERE NOT EXISTS (" +
+                "    SELECT 1 FROM disziplin WHERE lage = ? AND distanz = ?" +
+                ")";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            for (Disziplin d : defaultDisziplinen) {
+                String lageName = d.getLage().name();
+                int distanz = d.getDistanz();
+
+                ps.setString(1, lageName);
+                ps.setInt(2, distanz);
+                ps.setString(3, lageName);
+                ps.setInt(4, distanz);
+
+                ps.addBatch(); // Sammelt die Queries
+            }
+            ps.executeBatch(); // Führt alle Inserts in einem Rutsch aus
+        }
+    }
+
     public List<Disziplin> findAll() throws SQLException {
         List<Disziplin> result = new ArrayList<>();
         String sql = "SELECT * FROM disziplin ORDER BY lage, distanz";

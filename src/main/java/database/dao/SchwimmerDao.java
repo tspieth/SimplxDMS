@@ -40,6 +40,29 @@ public class SchwimmerDao {
         return result;
     }
 
+    /**
+     * Loads the swimmers of one club filtered by gender and sorted by last and first name.
+     *
+     * @param vereinId selected club ID
+     * @param geschlecht gender value stored as {@code m} or {@code w}
+     * @return matching swimmers
+     * @throws SQLException if the query fails
+     */
+    public List<Schwimmer> findByVereinUndGeschlecht(int vereinId, String geschlecht) throws SQLException {
+        List<Schwimmer> result = new ArrayList<>();
+        String sql = "SELECT * FROM schwimmer WHERE verein_id = ? AND geschlecht = ? ORDER BY name, vorname";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, vereinId);
+            ps.setString(2, geschlecht);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRow(rs));
+                }
+            }
+        }
+        return result;
+    }
+
     public List<Schwimmer> findByGeschlecht(String geschlecht) throws SQLException {
         List<Schwimmer> result = new ArrayList<>();
         String sql = "SELECT * FROM schwimmer WHERE geschlecht = ? ORDER BY name, vorname";
@@ -94,11 +117,51 @@ public class SchwimmerDao {
         }
     }
 
-    public void delete(int id) throws SQLException {
-        String sql = "DELETE FROM schwimmer WHERE id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+    /**
+     * Counts the team assignments that will be removed together with the swimmer.
+     *
+     * @param id swimmer database ID
+     * @return number of competition starts linked to this swimmer
+     * @throws SQLException if the query fails
+     */
+    public int countTeamAssignments(int id) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM start WHERE schwimmer_id = ?")) {
             ps.setInt(1, id);
-            ps.executeUpdate();
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    /**
+     * Removes the swimmer, all known best times, and all competition-team assignments atomically.
+     *
+     * @param id swimmer database ID
+     * @throws SQLException if any dependent data cannot be removed
+     */
+    public void delete(int id) throws SQLException {
+        boolean autoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            try (PreparedStatement ps = connection.prepareStatement("DELETE FROM start WHERE schwimmer_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = connection.prepareStatement("DELETE FROM leistung WHERE schwimmer_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = connection.prepareStatement("DELETE FROM schwimmer WHERE id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(autoCommit);
         }
     }
 

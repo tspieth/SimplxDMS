@@ -1,33 +1,45 @@
 package database;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+
 /**
  * Class used to detect the distribution-specific storage location of
  * the database file
  */
 public class DatabaseConfig {
+
+    /**
+     * Returns the H2 database path in the current user's platform-appropriate application directory.
+     *
+     * @return path to the database file without its H2-specific extension
+     */
     public static String getDatabasePath() {
         String userHome = System.getProperty("user.home");
-        String os = System.getProperty("os.name").toLowerCase();
-        String appDataDir;
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        Path appDataDir;
 
-        if (os.contains("win")) {
+        if (os.startsWith("windows")) {
             // Windows: C:\Users\Name\AppData\Roaming\SimplxDMS
             String appData = System.getenv("APPDATA");
-            appDataDir = (appData != null ? appData : userHome) + "/SimplxDMS";
-        } else if (os.contains("mac")) {
+            appDataDir = Path.of(appData != null && !appData.isBlank() ? appData : userHome, "SimplxDMS");
+        } else if (os.contains("mac") || os.contains("darwin")) {
             // macOS: /Users/Name/Library/Application Support/SimplxDMS
-            appDataDir = userHome + "/Library/Application Support/SimplxDMS";
+            appDataDir = Path.of(userHome, "Library", "Application Support", "SimplxDMS");
         } else {
             // Linux: /home/name/.simplxdms (versteckter Ordner, üblich unter Linux)
-            appDataDir = userHome + "/.simplxdms";
+            appDataDir = Path.of(userHome, ".simplxdms");
         }
 
-        // Ordner anlegen, falls noch nicht vorhanden
-        java.io.File dir = new java.io.File(appDataDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
+        try {
+            Files.createDirectories(appDataDir);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Datenbankverzeichnis kann nicht angelegt werden: " + appDataDir, e);
         }
 
-        return appDataDir + "/database";
+        return appDataDir.resolve("database").toString();
     }
 }
