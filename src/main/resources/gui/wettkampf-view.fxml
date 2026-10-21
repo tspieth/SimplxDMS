@@ -47,6 +47,10 @@
                 <Separator/>
                 <Button fx:id="btnWettkampfdateiEinlesen" text="Neue Wettkampfdatei einlesen"
                         onAction="#onWettkampfdateiEinlesenClick" maxWidth="Infinity"/>
+                <Separator/>
+                <Button fx:id="btnFinaRefBearbeiten" text="FINA Referenzzeiten bearbeiten"
+                        onAction="#onReferenzzeitenBearbeitenClick" maxWidth="Infinity"/>
+
             </children>
         </VBox>
     </right>

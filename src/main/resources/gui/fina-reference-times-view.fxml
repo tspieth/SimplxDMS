@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.controller.FinaReferenceTimeController" prefWidth="900" prefHeight="620" spacing="14"
+>
+    <padding>
+        <Insets top="16" right="16" bottom="16" left="16"/>
+    </padding>
+    <children>
+        <Label text="FINA-Referenzzeiten" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+        <HBox spacing="8">
+            <children>
+                <ToggleButton fx:id="toggleMaennlich" text="Männlich" selected="true">
+                    <toggleGroup>
+                        <ToggleGroup fx:id="genderToggleGroup"/>
+                    </toggleGroup>
+                </ToggleButton>
+                <ToggleButton fx:id="toggleWeiblich" text="Weiblich" toggleGroup="$genderToggleGroup"/>
+            </children>
+        </HBox>
+        <ScrollPane fitToWidth="true" fitToHeight="true" prefViewportHeight="480" VBox.vgrow="ALWAYS">
+            <content>
+                <HBox spacing="24">
+                    <children>
+                        <VBox fx:id="spalte1" spacing="10" HBox.hgrow="ALWAYS"/>
+                        <VBox fx:id="spalte2" spacing="10" HBox.hgrow="ALWAYS"/>
+                        <VBox fx:id="spalte3" spacing="10" HBox.hgrow="ALWAYS"/>
+                    </children>
+                </HBox>
+            </content>
+        </ScrollPane>
+        <HBox spacing="8" alignment="CENTER_RIGHT">
+            <children>
+                <Button fx:id="btnAbbrechen" text="Abbrechen"/>
+                <Button fx:id="btnSpeichern" text="Speichern"/>
+            </children>
+        </HBox>
+    </children>
+</VBox>

@@ -1,11 +1,36 @@
 package database.model;
 
 public enum SchwimmLage {
-    FREISTIL,
-    BRUST,
-    SCHMETTERLING,
-    RUECKEN,
-    LAGEN;
+    FREISTIL("Freistil"),
+    BRUST("Brust"),
+    SCHMETTERLING("Schmetterling"),
+    RUECKEN("Rücken"),
+    LAGEN("Lagen");
+
+    private final String anzeigename;
+
+    SchwimmLage(String anzeigename) {
+        this.anzeigename = anzeigename;
+    }
+
+    /**
+     * Returns the German display name of the swimming stroke.
+     *
+     * @return localized stroke name
+     */
+    public String getAnzeigename() {
+        return anzeigename;
+    }
+
+    /**
+     * Uses the German display name when the enum is rendered as text.
+     *
+     * @return localized stroke name
+     */
+    @Override
+    public String toString() {
+        return anzeigename;
+    }
 
     /**
      * Mapper method to Map Strings from the Database to enums
@@ -17,7 +42,7 @@ public enum SchwimmLage {
             return null;
         }
         try{
-            return SchwimmLage.valueOf(value.toUpperCase());
+            return SchwimmLage.valueOf(value.toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException e){
             throw new IllegalArgumentException("Unbekannter Lage Wert in Datenbank: " + e);
         }
