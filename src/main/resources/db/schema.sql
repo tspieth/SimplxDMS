@@ -57,7 +57,7 @@ ALTER TABLE leistung ALTER COLUMN zeit TIME(3);
 
 CREATE TABLE IF NOT EXISTS wettkampf (
     id     INT AUTO_INCREMENT PRIMARY KEY,
-    name   VARCHAR(150) NOT NULL,
+    name   VARCHAR(150) NOT NULL UNIQUE,
     datum  DATE
 );
 
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS programmpunkt (
     wettkampf_id  INT NOT NULL,
     position      INT NOT NULL,
     typ           VARCHAR(10) NOT NULL CHECK (typ IN ('LAUF', 'PAUSE')),
-    FOREIGN KEY (wettkampf_id) REFERENCES wettkampf(id),
+    FOREIGN KEY (wettkampf_id) REFERENCES wettkampf(id) ON DELETE CASCADE,
     UNIQUE (wettkampf_id, position)
 );
 
@@ -75,7 +75,10 @@ CREATE TABLE IF NOT EXISTS lauf (
     id                 INT AUTO_INCREMENT PRIMARY KEY,
     programmpunkt_id   INT NOT NULL UNIQUE,
     disziplin_id       INT NOT NULL,
-    FOREIGN KEY (programmpunkt_id) REFERENCES programmpunkt(id),
+    geschlecht         VARCHAR(10) NOT NULL CHECK (geschlecht IN ('MAENNLICH', 'WEIBLICH')),
+    wettkampf_nr       INT NOT NULL,
+    abschnitt          INT NOT NULL,
+    FOREIGN KEY (programmpunkt_id) REFERENCES programmpunkt(id) ON DELETE CASCADE,
     FOREIGN KEY (disziplin_id) REFERENCES disziplin(id)
 );
 
@@ -83,7 +86,7 @@ CREATE TABLE IF NOT EXISTS pause (
     id                 INT AUTO_INCREMENT PRIMARY KEY,
     programmpunkt_id   INT NOT NULL UNIQUE,
     dauer              INT NOT NULL,
-    FOREIGN KEY (programmpunkt_id) REFERENCES programmpunkt(id)
+    FOREIGN KEY (programmpunkt_id) REFERENCES programmpunkt(id) ON DELETE CASCADE
 );
 
 -- Eine DMS-Mannschaft eines Vereins bei einem bestimmten Wettkampf
@@ -93,7 +96,7 @@ CREATE TABLE IF NOT EXISTS mannschaft (
     wettkampf_id  INT NOT NULL,
     bezeichnung   VARCHAR(50) NOT NULL,
     FOREIGN KEY (verein_id) REFERENCES verein(id),
-    FOREIGN KEY (wettkampf_id) REFERENCES wettkampf(id)
+    FOREIGN KEY (wettkampf_id) REFERENCES wettkampf(id) ON DELETE CASCADE
 );
 
 -- Wer schwimmt tatsächlich in diesem Lauf, für welche Mannschaft, mit welchem Ergebnis
@@ -104,7 +107,8 @@ CREATE TABLE IF NOT EXISTS start (
     schwimmer_id    INT NOT NULL,
     erzielte_zeit   TIME,
     punkte          DOUBLE,
-    FOREIGN KEY (lauf_id) REFERENCES lauf(id),
-    FOREIGN KEY (mannschaft_id) REFERENCES mannschaft(id),
-    FOREIGN KEY (schwimmer_id) REFERENCES schwimmer(id)
+    FOREIGN KEY (lauf_id) REFERENCES lauf(id) ON DELETE CASCADE,
+    FOREIGN KEY (mannschaft_id) REFERENCES mannschaft(id) ON DELETE CASCADE,
+    FOREIGN KEY (schwimmer_id) REFERENCES schwimmer(id),
+    CONSTRAINT uq_start_lauf_mannschaft UNIQUE (lauf_id, mannschaft_id)
 );

@@ -1,6 +1,8 @@
 package gui;
 
 import database.model.Verein;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.util.function.Consumer;
 
@@ -8,8 +10,12 @@ import java.util.function.Consumer;
  * Holds application-wide state that must be shared between the independently loaded tabs.
  */
 public final class AppState {
-    private static Verein selectedClub;
+    public static final ObjectProperty<Verein> selectedVerein = new SimpleObjectProperty<>();
     private static Consumer<Verein> selectionListener = club -> { };
+
+    static {
+        selectedVerein.addListener((observable, oldClub, newClub) -> selectionListener.accept(newClub));
+    }
 
     private AppState() {
     }
@@ -20,7 +26,11 @@ public final class AppState {
      * @return the selected club, or {@code null} if no club is selected
      */
     public static Verein getSelectedClub() {
-        return selectedClub;
+        return selectedVerein.get();
+    }
+
+    public static ObjectProperty<Verein> selectedVereinProperty() {
+        return selectedVerein;
     }
 
     /**
@@ -29,8 +39,7 @@ public final class AppState {
      * @param club selected club, or {@code null} to clear the selection
      */
     public static void setSelectedClub(Verein club) {
-        selectedClub = club;
-        selectionListener.accept(club);
+        selectedVerein.set(club);
     }
 
     /**
@@ -40,6 +49,6 @@ public final class AppState {
      */
     public static void setSelectionListener(Consumer<Verein> listener) {
         selectionListener = listener == null ? club -> { } : listener;
-        selectionListener.accept(selectedClub);
+        selectionListener.accept(selectedVerein.get());
     }
 }

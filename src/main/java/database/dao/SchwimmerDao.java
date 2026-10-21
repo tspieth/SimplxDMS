@@ -63,6 +63,51 @@ public class SchwimmerDao {
         return result;
     }
 
+    /**
+     * Loads club swimmers who have no start (and therefore no team assignment) in any competition.
+     */
+    public List<Schwimmer> findUnassignedByVereinUndGeschlecht(int vereinId, String geschlecht)
+            throws SQLException {
+        List<Schwimmer> result = new ArrayList<>();
+        String sql = "SELECT sw.* FROM schwimmer sw "
+                + "WHERE sw.verein_id = ? AND sw.geschlecht = ? "
+                + "AND NOT EXISTS (SELECT 1 FROM start st WHERE st.schwimmer_id = sw.id) "
+                + "ORDER BY sw.name, sw.vorname";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, vereinId);
+            ps.setString(2, geschlecht);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRow(rs));
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns swimmers from the supplied IDs that gained a team assignment after candidate loading.
+     */
+    public List<Integer> findAssignedIds(List<Integer> swimmerIds) throws SQLException {
+        if (swimmerIds.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = String.join(",", java.util.Collections.nCopies(swimmerIds.size(), "?"));
+        String sql = "SELECT DISTINCT schwimmer_id FROM start WHERE schwimmer_id IN (" + placeholders + ")";
+        List<Integer> result = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            for (int i = 0; i < swimmerIds.size(); i++) {
+                ps.setInt(i + 1, swimmerIds.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(rs.getInt(1));
+                }
+            }
+        }
+        return result;
+    }
+
     public List<Schwimmer> findByGeschlecht(String geschlecht) throws SQLException {
         List<Schwimmer> result = new ArrayList<>();
         String sql = "SELECT * FROM schwimmer WHERE geschlecht = ? ORDER BY name, vorname";

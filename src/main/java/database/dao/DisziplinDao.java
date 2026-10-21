@@ -99,6 +99,17 @@ public class DisziplinDao {
         }
     }
 
+    public Disziplin findByLageUndDistanz(SchwimmLage lage, int distanz) throws SQLException {
+        String sql = "SELECT * FROM disziplin WHERE lage = ? AND distanz = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, lage.name());
+            ps.setInt(2, distanz);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapRow(rs) : null;
+            }
+        }
+    }
+
     public void insert(Disziplin disziplin) throws SQLException {
         String sql = "INSERT INTO disziplin (lage, distanz) VALUES (?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {

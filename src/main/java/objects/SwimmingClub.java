@@ -87,8 +87,22 @@ public class SwimmingClub {
     }
 
     public double[][] createMatrixForSimplex(boolean isMale) {
+        return createMatrixForSimplex(isMale, swimmers);
+    }
 
-        List<Swimmer> allfromGender = this.swimmers.stream().filter(s -> s.isMale() == isMale).toList();
+    /**
+     * Builds an optimization matrix from the eligible swimmers supplied by the database layer.
+     * The caller must load this list with the no-team database filter.
+     *
+     * @param isMale selected gender
+     * @param eligibleSwimmers swimmers currently free of team assignments
+     * @return points matrix for the optimizer
+     */
+    public double[][] createMatrixForSimplex(boolean isMale, List<Swimmer> eligibleSwimmers) {
+        rowNumberToSwimmer.clear();
+        List<Swimmer> allfromGender = eligibleSwimmers.stream()
+                .filter(swimmer -> swimmer.isMale() == isMale)
+                .toList();
 
         double[][] pointMatrix = new double[allfromGender.size()][SwimmingEvent.values().length * 2 - 2];
 
@@ -97,102 +111,102 @@ public class SwimmingClub {
             this.rowNumberToSwimmer.put(pos, s);
             int[] points = s.getPointsArr();
             double[] rowForMatrix = new double[SwimmingEvent.values().length * 2 - 2];
-            int sectionLength = points.length - 1;
+            int sectionLength = 17;
             for (int i = 0; i < points.length; i++) {
                 switch (SwimmingEvent.values()[i].getDisplayName()) {
                     case "100Lg":
-                        rowForMatrix[0] = points[i];
-                        rowForMatrix[0 + sectionLength] = points[i];
+                        rowForMatrix[0] = Math.max(0, points[i]);
+                        rowForMatrix[0 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "200K":
-                        rowForMatrix[1] = points[i];
-                        rowForMatrix[1 + sectionLength] = points[i];
+                        rowForMatrix[1] = Math.max(0, points[i]);
+                        rowForMatrix[1 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "100B":
-                        rowForMatrix[2] = points[i];
-                        rowForMatrix[2 + sectionLength] = points[i];
+                        rowForMatrix[2] = Math.max(0, points[i]);
+                        rowForMatrix[2 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "200R":
-                        rowForMatrix[3] = points[i];
-                        rowForMatrix[3 + sectionLength] = points[i];
+                        rowForMatrix[3] = Math.max(0, points[i]);
+                        rowForMatrix[3 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "100S":
-                        rowForMatrix[4] = points[i];
-                        rowForMatrix[4 + sectionLength] = points[i];
+                        rowForMatrix[4] = Math.max(0, points[i]);
+                        rowForMatrix[4 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "50B":
-                        rowForMatrix[5] = points[i];
-                        rowForMatrix[5 + sectionLength] = points[i];
+                        rowForMatrix[5] = Math.max(0, points[i]);
+                        rowForMatrix[5 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "200Lg":
-                        rowForMatrix[6] = points[i];
-                        rowForMatrix[6 + sectionLength] = points[i];
+                        rowForMatrix[6] = Math.max(0, points[i]);
+                        rowForMatrix[6 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "1500K":
                         if (isMale) {
-                            rowForMatrix[7] = points[i];
+                            rowForMatrix[7] = Math.max(0, points[i]);
                         } else {
-                            rowForMatrix[7 + sectionLength] = points[i];
+                            rowForMatrix[7 + sectionLength] = Math.max(0, points[i]);
                         }
 
                         break;
                     case "800K":
                         if (isMale) {
-                            rowForMatrix[7 + sectionLength] = points[i];
+                            rowForMatrix[7 + sectionLength] = Math.max(0, points[i]);
                         } else {
-                            rowForMatrix[7] = points[i];
+                            rowForMatrix[7] = Math.max(0, points[i]);
                         }
                         break;
                     case "50S":
-                        rowForMatrix[8] = points[i];
-                        rowForMatrix[8 + sectionLength] = points[i];
+                        rowForMatrix[8] = Math.max(0, points[i]);
+                        rowForMatrix[8 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "200B":
-                        rowForMatrix[9] = points[i];
-                        rowForMatrix[9 + sectionLength] = points[i];
+                        rowForMatrix[9] = Math.max(0, points[i]);
+                        rowForMatrix[9 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "100R":
-                        rowForMatrix[10] = points[i];
-                        rowForMatrix[10 + sectionLength] = points[i];
+                        rowForMatrix[10] = Math.max(0, points[i]);
+                        rowForMatrix[10 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "200S":
-                        rowForMatrix[11] = points[i];
-                        rowForMatrix[11 + sectionLength] = points[i];
+                        rowForMatrix[11] = Math.max(0, points[i]);
+                        rowForMatrix[11 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "50K":
-                        rowForMatrix[12] = points[i];
-                        rowForMatrix[12 + sectionLength] = points[i];
+                        rowForMatrix[12] = Math.max(0, points[i]);
+                        rowForMatrix[12 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "400Lg":
-                        rowForMatrix[13] = points[i];
-                        rowForMatrix[13 + sectionLength] = points[i];
+                        rowForMatrix[13] = Math.max(0, points[i]);
+                        rowForMatrix[13 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "50R":
-                        rowForMatrix[14] = points[i];
-                        rowForMatrix[14 + sectionLength] = points[i];
+                        rowForMatrix[14] = Math.max(0, points[i]);
+                        rowForMatrix[14 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "400K":
-                        rowForMatrix[15] = points[i];
-                        rowForMatrix[15 + sectionLength] = points[i];
+                        rowForMatrix[15] = Math.max(0, points[i]);
+                        rowForMatrix[15 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     case "100K":
-                        rowForMatrix[16] = points[i];
-                        rowForMatrix[16 + sectionLength] = points[i];
+                        rowForMatrix[16] = Math.max(0, points[i]);
+                        rowForMatrix[16 + sectionLength] = Math.max(0, points[i]);
 
                         break;
                     default:

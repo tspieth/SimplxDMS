@@ -2,57 +2,81 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="gui.controller.CompetitionController" prefHeight="672.0" prefWidth="1200.0">
-
-    <!-- LINKS: alle Schwimmläufe -->
     <center>
-        <ScrollPane fx:id="laeufeScrollPane" fitToWidth="true" BorderPane.alignment="CENTER">
-            <content>
-                <VBox fx:id="laeufeContainer" spacing="6" prefWidth="600.0">
-                    <padding>
-                        <Insets top="10" right="10" bottom="10" left="10"/>
-                    </padding>
-                    <children>
-                        <!-- wird zur Laufzeit mit den Läufen (inkl. zugeordneter Schwimmer + Punktzahl) befüllt -->
-                        <ListView fx:id="laeufeListView" prefHeight="600.0"/>
-                    </children>
-                </VBox>
-            </content>
-        </ScrollPane>
-    </center>
-
-    <!-- RECHTS: Mannschaftsauswahl + Aktionen -->
-    <right>
-        <VBox spacing="10" prefWidth="280.0" BorderPane.alignment="TOP_CENTER">
+        <VBox spacing="10" BorderPane.alignment="CENTER">
             <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
+                <Insets top="12" right="12" bottom="12" left="12"/>
             </padding>
             <children>
-                <Label text="Mannschaft auswählen" style="-fx-font-weight: bold;"/>
-                <ScrollPane fx:id="mannschaftScrollPane" fitToWidth="true" prefHeight="350.0">
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Geschlecht:"/>
+                        <ToggleButton fx:id="toggleMaennlich" text="Männlich" selected="true">
+                            <toggleGroup>
+                                <ToggleGroup fx:id="genderToggleGroup"/>
+                            </toggleGroup>
+                        </ToggleButton>
+                        <ToggleButton fx:id="toggleWeiblich" text="Weiblich" toggleGroup="$genderToggleGroup"/>
+                    </children>
+                </HBox>
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
                     <content>
-                        <ListView fx:id="mannschaftListView" prefHeight="340.0"/>
+                        <GridPane fx:id="gridLaeufe" hgap="12" vgap="8">
+                            <padding>
+                                <Insets top="8" right="8" bottom="8" left="8"/>
+                            </padding>
+                        </GridPane>
                     </content>
                 </ScrollPane>
-                <Button fx:id="btnMannschaftLoeschen" text="Mannschaft löschen"
-                        onAction="#onMannschaftLoeschenClick" maxWidth="Infinity"/>
+                <Label fx:id="lblMannschaftspunkte" text="Mannschaftspunkte: –"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            </children>
+        </VBox>
+    </center>
+    <right>
+        <VBox spacing="10" prefWidth="290" BorderPane.alignment="TOP_CENTER">
+            <padding>
+                <Insets top="12" right="12" bottom="12" left="12"/>
+            </padding>
+            <children>
+                <Label text="Wettkampf" style="-fx-font-weight: bold;"/>
+                <ComboBox fx:id="wettkampfComboBox" maxWidth="Infinity"/>
+                <Label fx:id="lblWettkampfHinweis" text="Kein Wettkampf vorhanden" visible="false"
+                       managed="false" wrapText="true"/>
+                <Button fx:id="btnWettkampfLoeschen" text="Wettkampf löschen" maxWidth="Infinity"
+                        onAction="#onWettkampfLoeschenClick"/>
                 <Separator/>
-                <Button fx:id="btnWettkampfdateiEinlesen" text="Neue Wettkampfdatei einlesen"
-                        onAction="#onWettkampfdateiEinlesenClick" maxWidth="Infinity"/>
+                <Label text="Mannschaften" style="-fx-font-weight: bold;"/>
+                <ListView fx:id="mannschaftListView" VBox.vgrow="ALWAYS" prefHeight="300"/>
+                <Button fx:id="btnMannschaftLoeschen" text="Mannschaft löschen" maxWidth="Infinity"
+                        onAction="#onMannschaftLoeschenClick"/>
+                <Label text="Pause zwischen Starts (Events):"/>
+                <Spinner fx:id="spinnerPauseGap" maxWidth="Infinity"/>
+                <Button text="Mannschaft berechnen" maxWidth="Infinity"
+                        onAction="#onMannschaftBerechnenClick"/>
                 <Separator/>
-                <Button fx:id="btnFinaRefBearbeiten" text="FINA Referenzzeiten bearbeiten"
-                        onAction="#onReferenzzeitenBearbeitenClick" maxWidth="Infinity"/>
-
+                <Button text="Neue Wettkampfdatei einlesen" maxWidth="Infinity"
+                        onAction="#onWettkampfdateiEinlesenClick"/>
+                <Button text="FINA-Referenzzeiten bearbeiten" maxWidth="Infinity"
+                        onAction="#onReferenzzeitenBearbeitenClick"/>
             </children>
         </VBox>
     </right>
-
 </BorderPane>

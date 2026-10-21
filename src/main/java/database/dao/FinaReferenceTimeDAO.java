@@ -8,6 +8,7 @@ import java.sql.*;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.OptionalDouble;
 
 /**
  * FinaReferenceTimeDAO
@@ -47,6 +48,17 @@ public class FinaReferenceTimeDAO {
             }
         }
         return result;
+    }
+
+    public OptionalDouble findTimeSeconds(int disziplinId, Geschlecht geschlecht) throws SQLException {
+        String sql = "SELECT fina_time FROM fina_referenzzeit WHERE disziplin_id = ? AND geschlecht = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, disziplinId);
+            ps.setString(2, geschlecht.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? OptionalDouble.of(rs.getDouble(1)) : OptionalDouble.empty();
+            }
+        }
     }
 
     /**

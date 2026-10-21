@@ -6,6 +6,7 @@ import database.dao.VereinDao;
 import database.model.Schwimmer;
 import database.model.Verein;
 import gui.AppState;
+import javafx.stage.FileChooser;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -22,10 +23,18 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.scene.paint.Color;
+import service.SchwimmerCsvImportService;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Manages club selection and the overview of all swimmers belonging to that club.
@@ -34,6 +43,7 @@ public class ClubController {
     @FXML private ListView<Schwimmer> vereinSchwimmerListView;
     @FXML private ListView<Verein> vereinAuswahlListView;
     @FXML private Button btnVereinBearbeiten;
+    @FXML private Button btnSchwimmerAusDatei;
     @FXML private Label lblVereinSchwimmerHinweis;
     @FXML private Label lblVereineHinweis;
 
@@ -109,6 +119,7 @@ public class ClubController {
         vereinSchwimmerListView.setPlaceholder(new Label("Keine Schwimmer/innen vorhanden"));
         btnVereinBearbeiten.setDisable(true);
         btnVereinBearbeiten.setOnAction(event -> editClub(AppState.getSelectedClub()));
+        btnSchwimmerAusDatei.setDisable(true);
         loadClubs();
         updateButtons();
     }
@@ -160,6 +171,78 @@ public class ClubController {
     @FXML
     private void onVereinNeuClick() {
         editClub(null);
+    }
+
+    @FXML
+    private void onSchwimmerAusDateiImportierenClick() {
+        Verein club = AppState.getSelectedClub();
+        if (club == null) {
+            showValidation("Bitte zuerst einen Verein auswählen.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Schwimmer/innen-CSV auswählen");
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("CSV-Dateien", "*.csv", "*.CSV"),
+                new FileChooser.ExtensionFilter("Alle Dateien", "*.*"));
+        String userHome = System.getProperty("user.home");
+        if (userHome != null && !userHome.isBlank()) {
+            Path home = Path.of(userHome);
+            if (Files.isDirectory(home)) {
+                chooser.setInitialDirectory(home.toFile());
+            }
+        }
+        java.io.File selectedFile = chooser.showOpenDialog(btnSchwimmerAusDatei.getScene().getWindow());
+        if (selectedFile == null) {
+            return;
+        }
+
+        SchwimmerCsvImportService importService = new SchwimmerCsvImportService(connection);
+        try {
+            List<SchwimmerCsvImportService.ImportSchwimmer> imports =
+                    importService.parse(selectedFile.toPath());
+            List<Schwimmer> existingSwimmers = new SchwimmerDao(connection).findByVerein(club.getId());
+            Map<String, Schwimmer> existingByName = new HashMap<>();
+            for (Schwimmer swimmer : existingSwimmers) {
+                existingByName.putIfAbsent(
+                        SchwimmerCsvImportService.duplicateKey(swimmer.getVorname(), swimmer.getName()), swimmer);
+            }
+
+            Set<Integer> acceptedExistingIds = new HashSet<>();
+            Set<Integer> declinedExistingIds = new HashSet<>();
+            for (SchwimmerCsvImportService.ImportSchwimmer imported : imports) {
+                Schwimmer existing = existingByName.get(imported.duplicateKey());
+                if (existing == null || acceptedExistingIds.contains(existing.getId())
+                        || declinedExistingIds.contains(existing.getId())) {
+                    continue;
+                }
+                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                        "„" + existing.getVorname() + " " + existing.getName() + "\" ist diesem Verein bereits "
+                                + "zugeordnet. Sollen die in der Datei enthaltenen Zeiten zu diesem Schwimmer "
+                                + "hinzugefügt werden?",
+                        ButtonType.YES, ButtonType.NO);
+                confirmation.setHeaderText("Schwimmer/in bereits vorhanden");
+                if (confirmation.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
+                    acceptedExistingIds.add(existing.getId());
+                } else {
+                    declinedExistingIds.add(existing.getId());
+                }
+            }
+
+            SchwimmerCsvImportService.ImportErgebnis result =
+                    importService.importSwimmers(club, imports, acceptedExistingIds);
+            refreshSwimmers();
+            showInfo("CSV-Import abgeschlossen.\n"
+                    + "Neue Schwimmer/innen: " + result.neueSchwimmer() + "\n"
+                    + "Ergänzte vorhandene Schwimmer/innen: " + result.ergaenzteSchwimmer() + "\n"
+                    + "Übersprungene Dubletten: " + result.uebersprungeneDubletten() + "\n"
+                    + "Gespeicherte Zeiten: " + result.gespeicherteLeistungen());
+        } catch (IOException e) {
+            showValidation("Die CSV-Datei ist ungültig oder konnte nicht gelesen werden:\n" + e.getMessage());
+        } catch (SQLException e) {
+            showError("Die Schwimmer/innen und Zeiten konnten nicht gespeichert werden.", e);
+        }
     }
 
     /**
@@ -273,7 +356,9 @@ public class ClubController {
      * Updates enabled controls after a selection change.
      */
     private void updateButtons() {
-        btnVereinBearbeiten.setDisable(AppState.getSelectedClub() == null);
+        boolean noClubSelected = AppState.getSelectedClub() == null;
+        btnVereinBearbeiten.setDisable(noClubSelected);
+        btnSchwimmerAusDatei.setDisable(noClubSelected);
     }
 
     /**
@@ -320,5 +405,9 @@ public class ClubController {
         Alert alert = new Alert(Alert.AlertType.ERROR, message + "\n" + error.getMessage(), ButtonType.OK);
         alert.setHeaderText("Datenbankfehler");
         alert.showAndWait();
+    }
+
+    private void showInfo(String message) {
+        new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK).showAndWait();
     }
 }

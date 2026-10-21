@@ -1,0 +1,224 @@
+(* erzeugt mit EasyWk - DAS Schwimmwettkampfprogramm *)
+(* Version 5.29 vom 05.04.2025                       *)
+(* Registriert für: SV Neptun Kiel *)
+(* www.easywk.de / info@easywk.de *)
+(* erzeugt am 13.10.2025 um 12:53 Uhr                *)
+FORMAT: Wettkampfdefinitionsliste;7;
+ERZEUGER: EasyWk;5.29;info@easywk.de;
+VERANSTALTUNG: Deutscher Mannschaftswettbewerb Schwimmen (DMS) 2. Bundesliga Nord 2025;Kiel;25;HANDZEIT;
+VERANSTALTUNGSORT: Universitätsschwimmhalle der Christian-Albrechts-Universität;Olshausenstr. 70-74;24118;Kiel;GER;0431 880 3736;;;
+AUSSCHREIBUNGIMNETZ: ;
+VERANSTALTER: Norddeutscher Schwimmverband;
+AUSRICHTER: SV Neptun Kiel;Uhde, Beate;Feuerbachstr. 44;24107;Kiel;GER;0431 548466;;wettkaempfe@sv-neptun-kiel.de;
+MELDEADRESSE: Uhde, Beate;Feuerbachstr. 44;24107;Kiel;;0431 548466;;wettkaempfe@sv-neptun-kiel.de;
+MELDESCHLUSS: 28.10.2025;23:59;
+BANKVERBINDUNG: Förde Sparkasse;DE55210501701001839420;NOLADE21KIE;
+(* KONTOINHABER: SV Neptun Kiel im Kieler Turnverein; *)
+ABSCHNITT: 1;13.12.2025;07:45;08:15;09:00;;
+ABSCHNITT: 2;13.12.2025;00:00;00:00;01:30;J; (* Uhrzeiten relativ nach vorherigem Abschnitt *)
+WETTKAMPF: 1;E;1;1;100;L;GL;W;SW;;; (* 100m Lagen weiblich *)
+WETTKAMPF: 2;E;1;1;100;L;GL;M;SW;;; (* 100m Lagen männlich *)
+WETTKAMPF: 3;E;1;1;200;F;GL;W;SW;;; (* 200m Freistil weiblich *)
+WETTKAMPF: 4;E;1;1;200;F;GL;M;SW;;; (* 200m Freistil männlich *)
+WETTKAMPF: 5;E;1;1;100;B;GL;W;SW;;; (* 100m Brust weiblich *)
+WETTKAMPF: 6;E;1;1;100;B;GL;M;SW;;; (* 100m Brust männlich *)
+WETTKAMPF: 7;E;1;1;200;R;GL;W;SW;;; (* 200m Rücken weiblich *)
+WETTKAMPF: 8;E;1;1;200;R;GL;M;SW;;; (* 200m Rücken männlich *)
+WETTKAMPF: 9;E;1;1;100;S;GL;W;SW;;; (* 100m Schmetterling weiblich *)
+WETTKAMPF: 10;E;1;1;100;S;GL;M;SW;;; (* 100m Schmetterling männlich *)
+WETTKAMPF: 11;E;1;1;50;B;GL;W;SW;;; (* 50m Brust weiblich *)
+WETTKAMPF: 12;E;1;1;50;B;GL;M;SW;;; (* 50m Brust männlich *)
+WETTKAMPF: 13;E;1;1;200;L;GL;W;SW;;; (* 200m Lagen weiblich *)
+WETTKAMPF: 14;E;1;1;200;L;GL;M;SW;;; (* 200m Lagen männlich *)
+WETTKAMPF: 15;E;1;1;800;F;GL;W;SW;;; (* 800m Freistil weiblich *)
+WETTKAMPF: 16;E;1;1;1500;F;GL;M;SW;;; (* 1500m Freistil männlich *)
+WETTKAMPF: 17;E;1;1;50;S;GL;W;SW;;; (* 50m Schmetterling weiblich *)
+WETTKAMPF: 18;E;1;1;50;S;GL;M;SW;;; (* 50m Schmetterling männlich *)
+WETTKAMPF: 19;E;1;1;200;B;GL;W;SW;;; (* 200m Brust weiblich *)
+WETTKAMPF: 20;E;1;1;200;B;GL;M;SW;;; (* 200m Brust männlich *)
+WETTKAMPF: 21;E;1;1;100;R;GL;W;SW;;; (* 100m Rücken weiblich *)
+WETTKAMPF: 22;E;1;1;100;R;GL;M;SW;;; (* 100m Rücken männlich *)
+WETTKAMPF: 23;E;1;1;200;S;GL;W;SW;;; (* 200m Schmetterling weiblich *)
+WETTKAMPF: 24;E;1;1;200;S;GL;M;SW;;; (* 200m Schmetterling männlich *)
+WETTKAMPF: 25;E;1;1;50;F;GL;W;SW;;; (* 50m Freistil weiblich *)
+WETTKAMPF: 26;E;1;1;50;F;GL;M;SW;;; (* 50m Freistil männlich *)
+WETTKAMPF: 27;E;1;1;400;L;GL;W;SW;;; (* 400m Lagen weiblich *)
+WETTKAMPF: 28;E;1;1;400;L;GL;M;SW;;; (* 400m Lagen männlich *)
+WETTKAMPF: 29;E;1;1;50;R;GL;W;SW;;; (* 50m Rücken weiblich *)
+WETTKAMPF: 30;E;1;1;50;R;GL;M;SW;;; (* 50m Rücken männlich *)
+WETTKAMPF: 31;E;1;1;400;F;GL;W;SW;;; (* 400m Freistil weiblich *)
+WETTKAMPF: 32;E;1;1;400;F;GL;M;SW;;; (* 400m Freistil männlich *)
+WETTKAMPF: 33;E;1;1;100;F;GL;W;SW;;; (* 100m Freistil weiblich *)
+WETTKAMPF: 34;E;1;1;100;F;GL;M;SW;;; (* 100m Freistil männlich *)
+WETTKAMPF: 35;E;2;1;100;L;GL;W;SW;;; (* 100m Lagen weiblich *)
+WETTKAMPF: 36;E;2;1;100;L;GL;M;SW;;; (* 100m Lagen männlich *)
+WETTKAMPF: 37;E;2;1;200;F;GL;W;SW;;; (* 200m Freistil weiblich *)
+WETTKAMPF: 38;E;2;1;200;F;GL;M;SW;;; (* 200m Freistil männlich *)
+WETTKAMPF: 39;E;2;1;100;B;GL;W;SW;;; (* 100m Brust weiblich *)
+WETTKAMPF: 40;E;2;1;100;B;GL;M;SW;;; (* 100m Brust männlich *)
+WETTKAMPF: 41;E;2;1;200;R;GL;W;SW;;; (* 200m Rücken weiblich *)
+WETTKAMPF: 42;E;2;1;200;R;GL;M;SW;;; (* 200m Rücken männlich *)
+WETTKAMPF: 43;E;2;1;100;S;GL;W;SW;;; (* 100m Schmetterling weiblich *)
+WETTKAMPF: 44;E;2;1;100;S;GL;M;SW;;; (* 100m Schmetterling männlich *)
+WETTKAMPF: 45;E;2;1;50;B;GL;W;SW;;; (* 50m Brust weiblich *)
+WETTKAMPF: 46;E;2;1;50;B;GL;M;SW;;; (* 50m Brust männlich *)
+WETTKAMPF: 47;E;2;1;200;L;GL;W;SW;;; (* 200m Lagen weiblich *)
+WETTKAMPF: 48;E;2;1;200;L;GL;M;SW;;; (* 200m Lagen männlich *)
+WETTKAMPF: 49;E;2;1;1500;F;GL;W;SW;;; (* 1500m Freistil weiblich *)
+WETTKAMPF: 50;E;2;1;800;F;GL;M;SW;;; (* 800m Freistil männlich *)
+WETTKAMPF: 51;E;2;1;50;S;GL;W;SW;;; (* 50m Schmetterling weiblich *)
+WETTKAMPF: 52;E;2;1;50;S;GL;M;SW;;; (* 50m Schmetterling männlich *)
+WETTKAMPF: 53;E;2;1;200;B;GL;W;SW;;; (* 200m Brust weiblich *)
+WETTKAMPF: 54;E;2;1;200;B;GL;M;SW;;; (* 200m Brust männlich *)
+WETTKAMPF: 55;E;2;1;100;R;GL;W;SW;;; (* 100m Rücken weiblich *)
+WETTKAMPF: 56;E;2;1;100;R;GL;M;SW;;; (* 100m Rücken männlich *)
+WETTKAMPF: 57;E;2;1;200;S;GL;W;SW;;; (* 200m Schmetterling weiblich *)
+WETTKAMPF: 58;E;2;1;200;S;GL;M;SW;;; (* 200m Schmetterling männlich *)
+WETTKAMPF: 59;E;2;1;50;F;GL;W;SW;;; (* 50m Freistil weiblich *)
+WETTKAMPF: 60;E;2;1;50;F;GL;M;SW;;; (* 50m Freistil männlich *)
+WETTKAMPF: 61;E;2;1;400;L;GL;W;SW;;; (* 400m Lagen weiblich *)
+WETTKAMPF: 62;E;2;1;400;L;GL;M;SW;;; (* 400m Lagen männlich *)
+WETTKAMPF: 63;E;2;1;50;R;GL;W;SW;;; (* 50m Rücken weiblich *)
+WETTKAMPF: 64;E;2;1;50;R;GL;M;SW;;; (* 50m Rücken männlich *)
+WETTKAMPF: 65;E;2;1;400;F;GL;W;SW;;; (* 400m Freistil weiblich *)
+WETTKAMPF: 66;E;2;1;400;F;GL;M;SW;;; (* 400m Freistil männlich *)
+WETTKAMPF: 67;E;2;1;100;F;GL;W;SW;;; (* 100m Freistil weiblich *)
+WETTKAMPF: 68;E;2;1;100;F;GL;M;SW;;; (* 100m Freistil männlich *)
+WERTUNG: 1;E;54001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 2;E;55001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 3;E;53001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 4;E;2001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 5;E;3001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 6;E;4001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 7;E;5001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 8;E;6001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 9;E;7001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 10;E;8001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 11;E;58001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 12;E;59001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 13;E;11001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 14;E;12001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 15;E;9001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 16;E;10001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 17;E;62001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 18;E;63001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 19;E;45001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 20;E;46001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 21;E;21001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 22;E;22001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 23;E;15001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 24;E;16001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 25;E;13001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 26;E;14001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 27;E;23001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 28;E;24001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 29;E;66001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 30;E;67001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 31;E;43001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 32;E;44001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 33;E;25001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 34;E;26001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 35;E;57001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 36;E;56001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 37;E;1001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 38;E;28001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 39;E;29001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 40;E;30001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 41;E;31001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 42;E;32001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 43;E;33001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 44;E;34001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 45;E;60001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 46;E;61001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 47;E;37001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 48;E;38001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 49;E;36001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 50;E;35001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 51;E;64001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 52;E;65001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 53;E;19001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 54;E;20001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 55;E;47001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 56;E;48001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 57;E;41001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 58;E;42001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 59;E;39001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 60;E;40001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 61;E;49001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 62;E;50001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 63;E;68001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 64;E;69001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 65;E;17001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 66;E;18001;JG;0;2015;M;Offene Wertung;
+WERTUNG: 67;E;51001;JG;0;2015;W;Offene Wertung;
+WERTUNG: 68;E;52001;JG;0;2015;M;Offene Wertung;
+MELDEGELD: Wkmeldegeld;0,00;1;
+MELDEGELD: Wkmeldegeld;0,00;2;
+MELDEGELD: Wkmeldegeld;0,00;3;
+MELDEGELD: Wkmeldegeld;0,00;4;
+MELDEGELD: Wkmeldegeld;0,00;5;
+MELDEGELD: Wkmeldegeld;0,00;6;
+MELDEGELD: Wkmeldegeld;0,00;7;
+MELDEGELD: Wkmeldegeld;0,00;8;
+MELDEGELD: Wkmeldegeld;0,00;9;
+MELDEGELD: Wkmeldegeld;0,00;10;
+MELDEGELD: Wkmeldegeld;0,00;11;
+MELDEGELD: Wkmeldegeld;0,00;12;
+MELDEGELD: Wkmeldegeld;0,00;13;
+MELDEGELD: Wkmeldegeld;0,00;14;
+MELDEGELD: Wkmeldegeld;0,00;15;
+MELDEGELD: Wkmeldegeld;0,00;16;
+MELDEGELD: Wkmeldegeld;0,00;17;
+MELDEGELD: Wkmeldegeld;0,00;18;
+MELDEGELD: Wkmeldegeld;0,00;19;
+MELDEGELD: Wkmeldegeld;0,00;20;
+MELDEGELD: Wkmeldegeld;0,00;21;
+MELDEGELD: Wkmeldegeld;0,00;22;
+MELDEGELD: Wkmeldegeld;0,00;23;
+MELDEGELD: Wkmeldegeld;0,00;24;
+MELDEGELD: Wkmeldegeld;0,00;25;
+MELDEGELD: Wkmeldegeld;0,00;26;
+MELDEGELD: Wkmeldegeld;0,00;27;
+MELDEGELD: Wkmeldegeld;0,00;28;
+MELDEGELD: Wkmeldegeld;0,00;29;
+MELDEGELD: Wkmeldegeld;0,00;30;
+MELDEGELD: Wkmeldegeld;0,00;31;
+MELDEGELD: Wkmeldegeld;0,00;32;
+MELDEGELD: Wkmeldegeld;0,00;33;
+MELDEGELD: Wkmeldegeld;0,00;34;
+MELDEGELD: Wkmeldegeld;0,00;35;
+MELDEGELD: Wkmeldegeld;0,00;36;
+MELDEGELD: Wkmeldegeld;0,00;37;
+MELDEGELD: Wkmeldegeld;0,00;38;
+MELDEGELD: Wkmeldegeld;0,00;39;
+MELDEGELD: Wkmeldegeld;0,00;40;
+MELDEGELD: Wkmeldegeld;0,00;41;
+MELDEGELD: Wkmeldegeld;0,00;42;
+MELDEGELD: Wkmeldegeld;0,00;43;
+MELDEGELD: Wkmeldegeld;0,00;44;
+MELDEGELD: Wkmeldegeld;0,00;45;
+MELDEGELD: Wkmeldegeld;0,00;46;
+MELDEGELD: Wkmeldegeld;0,00;47;
+MELDEGELD: Wkmeldegeld;0,00;48;
+MELDEGELD: Wkmeldegeld;0,00;49;
+MELDEGELD: Wkmeldegeld;0,00;50;
+MELDEGELD: Wkmeldegeld;0,00;51;
+MELDEGELD: Wkmeldegeld;0,00;52;
+MELDEGELD: Wkmeldegeld;0,00;53;
+MELDEGELD: Wkmeldegeld;0,00;54;
+MELDEGELD: Wkmeldegeld;0,00;55;
+MELDEGELD: Wkmeldegeld;0,00;56;
+MELDEGELD: Wkmeldegeld;0,00;57;
+MELDEGELD: Wkmeldegeld;0,00;58;
+MELDEGELD: Wkmeldegeld;0,00;59;
+MELDEGELD: Wkmeldegeld;0,00;60;
+MELDEGELD: Wkmeldegeld;0,00;61;
+MELDEGELD: Wkmeldegeld;0,00;62;
+MELDEGELD: Wkmeldegeld;0,00;63;
+MELDEGELD: Wkmeldegeld;0,00;64;
+MELDEGELD: Wkmeldegeld;0,00;65;
+MELDEGELD: Wkmeldegeld;0,00;66;
+MELDEGELD: Wkmeldegeld;0,00;67;
+MELDEGELD: Wkmeldegeld;0,00;68;
+MELDEGELD: Meldegeldpauschale;200,00;;
+DATEIENDE

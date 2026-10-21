@@ -44,6 +44,24 @@ public class StartDao {
         return result;
     }
 
+    public List<StartAnzeige> findAnzeigen(int laufId, int mannschaftId) throws SQLException {
+        String sql = "SELECT s.schwimmer_id, sw.vorname, sw.name FROM start s "
+                + "JOIN schwimmer sw ON sw.id = s.schwimmer_id "
+                + "WHERE s.lauf_id = ? AND s.mannschaft_id = ?";
+        List<StartAnzeige> result = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, laufId);
+            ps.setInt(2, mannschaftId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(new StartAnzeige(rs.getInt("schwimmer_id"),
+                            rs.getString("vorname"), rs.getString("name")));
+                }
+            }
+        }
+        return result;
+    }
+
     /** Berechnet die Gesamtpunktzahl einer Mannschaft direkt in SQL (SUM ueber alle Starts). */
     public double gesamtpunkteFuerMannschaft(int mannschaftId) throws SQLException {
         String sql = "SELECT COALESCE(SUM(punkte), 0) AS summe FROM start WHERE mannschaft_id = ?";
@@ -118,5 +136,8 @@ public class StartDao {
                 zeit != null ? zeit.toLocalTime() : null,
                 punkte
         );
+    }
+
+    public record StartAnzeige(int schwimmerId, String vorname, String name) {
     }
 }

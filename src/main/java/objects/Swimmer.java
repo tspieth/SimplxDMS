@@ -30,7 +30,7 @@ public class Swimmer {
     private int totalPoints; // may be used for Optimisation
     private boolean isMale;
     private int countChoosenEvents = 0; // keeps track of how many events the swimmer has chosen
-    private boolean[] eventIndices = new boolean[Competition.order.length]; // used to calculate brektimes between
+    private boolean[] eventIndices = new boolean[Competition.order == null ? 0 : Competition.order.length]; // used to calculate brektimes between
                                                                             // events
     private double[] times = new double[Competition.eventCount];
     private boolean[] choosenEvents = new boolean[Competition.eventCount]; // contains true for events the swimmer
@@ -55,6 +55,12 @@ public class Swimmer {
         Arrays.fill(points, -1); // initialize all points to -1 (indicating not defined)
         Arrays.fill(times, -1); // initialize all times to -1
 
+    }
+
+    public Swimmer(int id, String name, boolean isMale, int endurance) {
+        this(name, isMale, endurance);
+        this.id = id;
+        nextId = Math.max(nextId, id + 1);
     }
 
     // Copy constructor creates DEEP COPY
@@ -175,6 +181,14 @@ public class Swimmer {
         } else {
             throw new IllegalArgumentException("Invalid event index");
         }
+    }
+
+    public void setPointsForEvent(SwimmingEvent event, int points) {
+        int eventIndex = event.getIndex();
+        if (eventIndex < 0 || eventIndex >= this.points.length) {
+            throw new IllegalArgumentException("Invalid event index");
+        }
+        this.points[eventIndex] = points;
     }
 
     public void setPointsForEvent(String event, String time) {

@@ -5,6 +5,7 @@ import database.model.Leistung;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 
 public class LeistungDao {
 
@@ -41,6 +42,22 @@ public class LeistungDao {
             }
         }
         return result;
+    }
+
+    public OptionalDouble findBestTimeSeconds(int schwimmerId, int disziplinId) throws SQLException {
+        String sql = "SELECT MIN(zeit) AS bestzeit FROM leistung WHERE schwimmer_id = ? AND disziplin_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, schwimmerId);
+            ps.setInt(2, disziplinId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return OptionalDouble.empty();
+                }
+                java.time.LocalTime time = rs.getObject("bestzeit", java.time.LocalTime.class);
+                return time == null ? OptionalDouble.empty()
+                        : OptionalDouble.of(time.toSecondOfDay() + time.getNano() / 1_000_000_000.0);
+            }
+        }
     }
 
     public void insert(Leistung leistung) throws SQLException {

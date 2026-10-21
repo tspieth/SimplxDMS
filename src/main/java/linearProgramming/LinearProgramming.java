@@ -1,10 +1,15 @@
 package linearProgramming;
 
+import database.model.Verein;
+import database.model.Wettkampf;
 import objects.Competition;
 import objects.Swimmer;
 import objects.SwimmingClub;
 import objects.SwimmingEvent;
+import service.TeamOptimizationService;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -220,35 +225,136 @@ public class LinearProgramming {
     }
 
     public static String toStringsimplexXBnB(SwimmingClub club, boolean isMale, int pauseGap) {
+        return optimize(club, isMale, pauseGap).log();
+    }
 
+    public static String toStringsimplexXBnB(Connection connection, Verein club, Wettkampf competition,
+                                               boolean isMale, int pauseGap) throws SQLException {
+        return new TeamOptimizationService(connection)
+                .generateAndSaveTeamForClub(club, competition, isMale, pauseGap);
+    }
+
+    public static OptimizationResult toStringsimplexXBnB(double[][] points, int[] swimmerIds,
+                                                           String[] swimmerNames, int[] eventIndexes,
+                                                           int pauseGap) {
+        if (points.length != swimmerIds.length || points.length != swimmerNames.length
+                || eventIndexes.length != 34) {
+            throw new IllegalArgumentException("Optimierungsmatrix und Schwimmerdaten passen nicht zusammen.");
+        }
+        if (pauseGap < 0) {
+            throw new IllegalArgumentException("Die Pausenlänge darf nicht negativ sein.");
+        }
+        for (double[] row : points) {
+            if (row.length != 34) {
+                throw new IllegalArgumentException("Jede Zeile der Optimierungsmatrix muss 34 Positionen enthalten.");
+            }
+        }
+        for (int eventIndex : eventIndexes) {
+            if (eventIndex < 0 || eventIndex >= SwimmingEvent.values().length) {
+                throw new IllegalArgumentException("Ungültiger Eventindex in der Optimierungsreihenfolge.");
+            }
+        }
+
+        SwimModel model = new SwimModel(points.length, pauseGap, points);
+        Constraints base = Constraints.buildBaseConstraints(model);
+        Solution solution = branchAndBound(model, base);
+        int[] assignedSwimmerIds = new int[34];
+        Arrays.fill(assignedSwimmerIds, -1);
+        StringBuilder log = new StringBuilder();
+        int totalPoints = 0;
+
+        if (solution.bestX != null) {
+            for (int position = 0; position < 34; position++) {
+                int swimmerIndex = -1;
+                for (int swimmer = 0; swimmer < points.length; swimmer++) {
+                    if (solution.bestX[model.var(swimmer, position)] > 0.5) {
+                        swimmerIndex = swimmer;
+                        break;
+                    }
+                }
+                if (swimmerIndex >= 0) {
+                    assignedSwimmerIds[position] = swimmerIds[swimmerIndex];
+                    int pointsForEvent = (int) Math.round(points[swimmerIndex][position]);
+                    totalPoints += pointsForEvent;
+                    log.append(String.format("Abschnitt%d | %-6s | Punkte = %4d | %20s%n",
+                            position < 17 ? 1 : 2, SwimmingEvent.values()[eventIndexes[position]].getDisplayName(),
+                            pointsForEvent, swimmerNames[swimmerIndex]));
+                } else {
+                    log.append(String.format("Abschnitt%d | %-6s | UNBESETZT%n",
+                            position < 17 ? 1 : 2, SwimmingEvent.values()[eventIndexes[position]].getDisplayName()));
+                }
+            }
+        } else {
+            for (int position = 0; position < 34; position++) {
+                log.append(String.format("Abschnitt%d | %-6s | UNBESETZT%n",
+                        position < 17 ? 1 : 2, SwimmingEvent.values()[eventIndexes[position]].getDisplayName()));
+            }
+        }
+        log.append("Best objective value = ").append(totalPoints).append('\n');
+        return new OptimizationResult(log.toString(), assignedSwimmerIds, eventIndexes.clone(), totalPoints);
+    }
+
+    public static OptimizationResult optimize(SwimmingClub club, boolean isMale, int pauseGap) {
+        int[] simpleOrder = getSimpleOrder(isMale);
+        if (pauseGap < 0) {
+            throw new IllegalArgumentException("Die Pausenlänge darf nicht negativ sein.");
+        }
         double[][] L = club.createMatrixForSimplex(isMale);
+        if (L.length == 0) {
+            throw new IllegalStateException("Keine freien Schwimmer in der Datenbank gefunden.");
+        }
         SwimModel model = new SwimModel(L.length, pauseGap, L);
         Constraints base = Constraints.buildBaseConstraints(model);
 
         Solution sol = branchAndBound(model, base);
-
-        StringBuilder sb = new StringBuilder();
-
+        if (sol.bestX == null) {
+            throw new IllegalStateException("Für die freien Schwimmer wurde keine zulässige Mannschaft gefunden.");
+        }
         int[] assign = decodeAssignment(model, sol.bestX);
+        StringBuilder sb = new StringBuilder();
+        int[] assignedSwimmerIds = new int[34];
+        int[] assignedEventIndexes = new int[34];
         int totalPoints = 0;
-        int[] simpleOrder = isMale ? Competition.simpleOrderMale : Competition.simpleOrderFemale;
         for (int j0 = 0; j0 < 34; j0++) {
-            int j = j0 + 1;
-            int section = (j0 < 17) ? 1 : 2;
-            int idx = (j0 % 17) + 1; // 1..17
-            String eventName;
-
-            eventName = SwimmingEvent.values()[simpleOrder[j0]].getDisplayName();
+            int eventIndex = simpleOrder[j0];
             Swimmer s = club.getRowNumberToSwimmer().get(assign[j0]);
+            if (s == null) {
+                throw new IllegalStateException("Der Optimierer hat eine unvollständige Mannschaft geliefert.");
+            }
             String swimmerName = s.getName();
-            int points = s.getPointsForEventIndex(simpleOrder[j0]);
+            int points = Math.max(0, s.getPointsForEventIndex(eventIndex));
             totalPoints += points;
-
-            sb.append(String.format("Abschnitt%d | %-6s | Punkte = %4d | %20s%n", section,
-                    eventName, points, swimmerName));
+            assignedSwimmerIds[j0] = s.getID();
+            assignedEventIndexes[j0] = eventIndex;
+            sb.append(String.format("Abschnitt%d | %-6s | Punkte = %4d | %20s%n",
+                    j0 < 17 ? 1 : 2, SwimmingEvent.values()[eventIndex].getDisplayName(), points, swimmerName));
         }
         sb.append("Best objective value = " + totalPoints + "\n");
+        return new OptimizationResult(sb.toString(), assignedSwimmerIds, assignedEventIndexes, totalPoints);
+    }
 
-        return sb.toString();
+    private static int[] getSimpleOrder(boolean isMale) {
+        String[] eventsPerSection = {
+                "100Lg", "200K", "100B", "200R", "100S", "50B", "200Lg",
+                "", "50S", "200B", "100R", "200S", "50K", "400Lg", "50R", "400K", "100K"
+        };
+        eventsPerSection[7] = isMale ? "1500K" : "800K";
+        String[] eventNames = Arrays.copyOf(eventsPerSection, 34);
+        System.arraycopy(eventsPerSection, 0, eventNames, 17, 17);
+        eventNames[24] = isMale ? "800K" : "1500K";
+        int[] order = new int[34];
+        for (int i = 0; i < order.length; i++) {
+            int eventIndex = SwimmingEvent.getByDisplayName(eventNames[i]).getIndex();
+            order[i] = eventIndex;
+        }
+        if (isMale) {
+            Competition.simpleOrderMale = order;
+        } else {
+            Competition.simpleOrderFemale = order;
+        }
+        return order;
+    }
+
+    public record OptimizationResult(String log, int[] swimmerIds, int[] eventIndexes, int totalPoints) {
     }
 }

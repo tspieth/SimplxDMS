@@ -16,7 +16,7 @@ public class WettkampfDao {
 
     public List<Wettkampf> findAll() throws SQLException {
         List<Wettkampf> result = new ArrayList<>();
-        String sql = "SELECT * FROM wettkampf ORDER BY datum DESC";
+        String sql = "SELECT * FROM wettkampf ORDER BY datum DESC NULLS LAST, name";
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -24,6 +24,46 @@ public class WettkampfDao {
             }
         }
         return result;
+    }
+
+    public boolean existsByName(String name) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement("SELECT 1 FROM wettkampf WHERE name = ?")) {
+            ps.setString(1, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public long countAll() throws SQLException {
+        try (Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM wettkampf")) {
+            rs.next();
+            return rs.getLong(1);
+        }
+    }
+
+    public long countLaeufe(int id) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM lauf l JOIN programmpunkt p ON p.id = l.programmpunkt_id "
+                + "WHERE p.wettkampf_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    public long countMannschaften(int id) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT COUNT(*) FROM mannschaft WHERE wettkampf_id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
     }
 
     public Wettkampf findById(int id) throws SQLException {
