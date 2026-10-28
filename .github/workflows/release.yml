@@ -17,7 +17,7 @@ jobs:
             type: msi
             args: >-
               --win-shortcut --win-menu --win-menu-group SimplxDMS --win-dir-chooser
-              --win-upgrade-uuid DEINE-GUID-HIER
+              --win-upgrade-uuid 8D472F4A-8A74-4F6A-9B9A-0C4A0B1D7E21
               --icon src/main/resources/icons/app.ico
           - os: ubuntu-latest
             type: deb
@@ -57,7 +57,7 @@ jobs:
             --type ${{ matrix.type }} \
             --app-version 1.0.0 \
             --vendor "Timon Spieth" \
-            --${{ matrix.args }} \
+            ${{ matrix.args }} \
             --dest dist/
 
       - name: Installer zum Release hochladen
