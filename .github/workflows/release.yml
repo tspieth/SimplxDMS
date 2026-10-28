@@ -19,14 +19,14 @@ jobs:
               --win-shortcut --win-menu --win-menu-group SimplxDMS --win-dir-chooser
               --win-upgrade-uuid DEINE-GUID-HIER
               --icon src/main/resources/icons/app.ico
-          - os: macos-latest
-            type: dmg
-            args: >-
           - os: ubuntu-latest
             type: deb
             args: >-
               --linux-shortcut --linux-menu-group Office
               --icon src/main/resources/icons/app.png
+          - os: macos-latest
+            type: dmg
+            args: >-
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
