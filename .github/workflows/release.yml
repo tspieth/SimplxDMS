@@ -15,10 +15,18 @@ jobs:
         include:
           - os: windows-latest
             type: msi
+            args: >-
+              --win-shortcut --win-menu --win-menu-group SimplxDMS --win-dir-chooser
+              --win-upgrade-uuid DEINE-GUID-HIER
+              --icon src/main/resources/icons/app.ico
           - os: macos-latest
             type: dmg
+            args: >-
           - os: ubuntu-latest
             type: deb
+            args: >-
+              --linux-shortcut --linux-menu-group Office
+              --icon src/main/resources/icons/app.png
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +55,9 @@ jobs:
             --main-jar ${{ steps.jarname.outputs.jar }} \
             --main-class gui.Launcher \
             --type ${{ matrix.type }} \
-            --app-version 1.0 \
+            --app-version 1.0.0 \
             --vendor "Timon Spieth" \
+            --${{ matrix.args }} \
             --dest dist/
 
       - name: Installer zum Release hochladen
