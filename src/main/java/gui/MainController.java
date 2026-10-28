@@ -1,5 +1,7 @@
 package gui;
 
+import java.io.IOException;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -7,7 +9,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import java.io.IOException;
 
 public class MainController {
 
@@ -15,6 +16,7 @@ public class MainController {
     @FXML private BorderPane mainRoot;
     @FXML private HBox tabBar;
     @FXML private Label selectedClubLabel;
+    private Node competitionView;
 
     @FXML
     public void initialize() {
@@ -57,9 +59,16 @@ public class MainController {
      * @param fxmlPath classpath path to the tab resource
      */
     private void loadView(String fxmlPath) {
+        if ("/gui/wettkampf-view.fxml".equals(fxmlPath) && competitionView != null) {
+            contentArea.getChildren().setAll(competitionView);
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Node view = loader.load();
+            if ("/gui/wettkampf-view.fxml".equals(fxmlPath)) {
+                competitionView = view;
+            }
             contentArea.getChildren().setAll(view);
         } catch (IOException e) {
             new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR,

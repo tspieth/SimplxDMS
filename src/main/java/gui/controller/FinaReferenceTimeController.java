@@ -11,6 +11,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.VBox;
@@ -44,7 +45,7 @@ public class FinaReferenceTimeController {
     @FXML private Button btnSpeichern;
 
     private final Connection connection = DatabaseManager.getInstance().getConnection();
-    private final Map<Integer, TextField> fields = new HashMap<>();
+    private final Map<Integer, FinaTimeField> fields = new HashMap<>();
     private final Map<Geschlecht, Map<Integer, String>> valuesByGender = new EnumMap<>(Geschlecht.class);
     private Geschlecht currentGender = Geschlecht.MAENNLICH;
     private Stage stage;
@@ -141,8 +142,8 @@ public class FinaReferenceTimeController {
                         .filter(discipline -> discipline.getLage() == lage)
                         .sorted(Comparator.comparingInt(Disziplin::getDistanz))
                         .forEach(discipline -> {
-                            TextField field = new TextField();
-                            field.setPromptText("m:ss.hh");
+                            FinaTimeField field = new FinaTimeField();
+                            field.setPromptText("mm:ss.hh");
                             field.setPrefColumnCount(8);
                             fields.put(discipline.getId(), field);
                             strokeGroup.getChildren().addAll(
@@ -193,7 +194,10 @@ public class FinaReferenceTimeController {
      */
     private void captureCurrentFields() {
         Map<Integer, String> values = valuesByGender.get(currentGender);
-        fields.forEach((disciplineId, field) -> values.put(disciplineId, field.getText()));
+        fields.forEach((disciplineId, field) -> {
+            field.commit();
+            values.put(disciplineId, field.getText());
+        });
     }
 
     /**
@@ -203,7 +207,7 @@ public class FinaReferenceTimeController {
      */
     private void renderGender(Geschlecht gender) {
         Map<Integer, String> values = valuesByGender.get(gender);
-        fields.forEach((disciplineId, field) -> field.setText(values.getOrDefault(disciplineId, "")));
+        fields.forEach((disciplineId, field) -> field.setTimeText(values.getOrDefault(disciplineId, "")));
     }
 
     /**
@@ -339,5 +343,100 @@ public class FinaReferenceTimeController {
         Alert alert = new Alert(Alert.AlertType.ERROR, message + "\n" + error.getMessage(), ButtonType.OK);
         alert.setHeaderText("Fehler");
         alert.showAndWait();
+    }
+
+    private static final class FinaTimeField extends TextField {
+        private String inputDigits = "";
+        private boolean formatting;
+
+        private FinaTimeField() {
+            setTextFormatter(new TextFormatter<String>(change -> {
+                if (formatting || !change.isContentChange()) {
+                    return change;
+                }
+                String insertedDigits = change.getText().replaceAll("\\D", "");
+                boolean replacingWholeValue = change.getRangeStart() == 0
+                        && change.getRangeEnd() == change.getControlText().length();
+                if (!change.getText().isEmpty() && insertedDigits.isEmpty()) {
+                    return null;
+                }
+
+                if (!insertedDigits.isEmpty()) {
+                    inputDigits = replacingWholeValue ? insertedDigits : inputDigits + insertedDigits;
+                    if (inputDigits.length() > 6) {
+                        inputDigits = inputDigits.substring(0, 6);
+                    }
+                } else if (replacingWholeValue) {
+                    inputDigits = "";
+                } else if (!inputDigits.isEmpty()) {
+                    inputDigits = inputDigits.substring(0, inputDigits.length() - 1);
+                }
+
+                String formatted = formatPartialTime(inputDigits);
+                change.setRange(0, change.getControlText().length());
+                change.setText(formatted);
+                change.selectRange(formatted.length(), formatted.length());
+                return change;
+            }));
+            focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+                inputDigits = getText().replaceAll("\\D", "");
+                if (isFocused) {
+                    setTextWithoutFiltering(formatPartialTime(inputDigits));
+                } else {
+                    commit();
+                }
+            });
+        }
+
+        private void setTimeText(String value) {
+            if (value.isBlank()) {
+                inputDigits = "";
+                setTextWithoutFiltering("");
+                return;
+            }
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("^(\\d+):([0-5]\\d)\\.(\\d{2})$").matcher(value.trim());
+            if (matcher.matches()) {
+                String minutes = matcher.group(1);
+                inputDigits = (minutes.length() == 1 ? "0" + minutes : minutes)
+                        + matcher.group(2) + matcher.group(3);
+                setTextWithoutFiltering(formatPartialTime(inputDigits));
+            } else {
+                inputDigits = value.replaceAll("\\D", "");
+                setTextWithoutFiltering(value);
+            }
+        }
+
+        private void commit() {
+            inputDigits = getText().replaceAll("\\D", "");
+            if (inputDigits.isEmpty()) {
+                setTextWithoutFiltering("");
+                return;
+            }
+            inputDigits += "0".repeat(Math.max(0, 6 - inputDigits.length()));
+            setTextWithoutFiltering(formatPartialTime(inputDigits));
+        }
+
+        private static String formatPartialTime(String digits) {
+            StringBuilder formatted = new StringBuilder(digits);
+            if (digits.length() >= 2) {
+                int minutesLength = Math.max(2, digits.length() - 4);
+                formatted.insert(minutesLength, ':');
+            }
+            if (digits.length() >= 4) {
+                int minutesLength = Math.max(2, digits.length() - 4);
+                formatted.insert(minutesLength + 3, '.');
+            }
+            return formatted.toString();
+        }
+
+        private void setTextWithoutFiltering(String value) {
+            formatting = true;
+            try {
+                setText(value);
+            } finally {
+                formatting = false;
+            }
+        }
     }
 }

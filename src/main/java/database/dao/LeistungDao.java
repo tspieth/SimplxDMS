@@ -4,7 +4,9 @@ import database.model.Leistung;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 
 public class LeistungDao {
@@ -58,6 +60,54 @@ public class LeistungDao {
                         : OptionalDouble.of(time.toSecondOfDay() + time.getNano() / 1_000_000_000.0);
             }
         }
+    }
+
+    /**
+     * Loads the fastest time for each requested swimmer and discipline in batches.
+     *
+     * @param swimmerIds swimmer IDs to include
+     * @param disciplineIds discipline IDs to include
+     * @return best times grouped by swimmer ID and discipline ID, in seconds
+     * @throws SQLException if the query fails
+     */
+    public Map<Integer, Map<Integer, Double>> findBestTimesSeconds(List<Integer> swimmerIds,
+                                                                    List<Integer> disciplineIds)
+            throws SQLException {
+        Map<Integer, Map<Integer, Double>> result = new HashMap<>();
+        if (swimmerIds.isEmpty() || disciplineIds.isEmpty()) {
+            return result;
+        }
+
+        int swimmerBatchSize = 500;
+        for (int start = 0; start < swimmerIds.size(); start += swimmerBatchSize) {
+            List<Integer> swimmerBatch = swimmerIds.subList(start,
+                    Math.min(start + swimmerBatchSize, swimmerIds.size()));
+            String swimmerParameters = String.join(",", java.util.Collections.nCopies(swimmerBatch.size(), "?"));
+            String disciplineParameters = String.join(",", java.util.Collections.nCopies(disciplineIds.size(), "?"));
+            String sql = "SELECT schwimmer_id, disziplin_id, MIN(zeit) AS bestzeit FROM leistung "
+                    + "WHERE schwimmer_id IN (" + swimmerParameters + ") AND disziplin_id IN ("
+                    + disciplineParameters + ") GROUP BY schwimmer_id, disziplin_id";
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                int parameterIndex = 1;
+                for (int swimmerId : swimmerBatch) {
+                    ps.setInt(parameterIndex++, swimmerId);
+                }
+                for (int disciplineId : disciplineIds) {
+                    ps.setInt(parameterIndex++, disciplineId);
+                }
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        java.time.LocalTime time = rs.getObject("bestzeit", java.time.LocalTime.class);
+                        if (time != null) {
+                            result.computeIfAbsent(rs.getInt("schwimmer_id"), ignored -> new HashMap<>())
+                                    .put(rs.getInt("disziplin_id"),
+                                            time.toSecondOfDay() + time.getNano() / 1_000_000_000.0);
+                        }
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     public void insert(Leistung leistung) throws SQLException {

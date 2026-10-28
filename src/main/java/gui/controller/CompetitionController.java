@@ -7,6 +7,12 @@ import database.model.Verein;
 import database.model.Wettkampf;
 import gui.AppState;
 import linearProgramming.LinearProgramming;
+import service.WettkampfAnsichtService;
+import service.WettkampfImportService;
+import service.WettkampfService;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.concurrent.Task;
 import javafx.collections.FXCollections;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
@@ -21,6 +27,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleButton;
@@ -28,12 +35,12 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
-import service.WettkampfAnsichtService;
-import service.WettkampfImportService;
-import service.WettkampfService;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -48,6 +55,11 @@ import java.util.Objects;
  * Shows a read-only competition schedule and team assignments.
  */
 public class CompetitionController {
+    @FXML private VBox centerContent;
+    @FXML private VBox rightContent;
+    @FXML private HBox calculationProgress;
+    @FXML private Label lblBerechnungsstatus;
+    @FXML private ProgressBar progressBarBerechnung;
     @FXML private ComboBox<Wettkampf> wettkampfComboBox;
     @FXML private Label lblWettkampfHinweis;
     @FXML private Button btnWettkampfLoeschen;
@@ -64,6 +76,9 @@ public class CompetitionController {
     private final WettkampfService wettkampfService = new WettkampfService(connection);
     private final WettkampfAnsichtService ansichtService = new WettkampfAnsichtService(connection);
     private Geschlecht selectedGender = Geschlecht.MAENNLICH;
+    private Timeline calculationTimer;
+    private long calculationStartedAt;
+    private boolean calculating;
     private final ChangeListener<Verein> selectedClubListener =
             (observable, oldClub, newClub) -> {
                 refreshTeams(true);
@@ -97,10 +112,16 @@ public class CompetitionController {
         spinnerPauseGap.setEditable(true);
         mannschaftListView.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> btnMannschaftLoeschen.setDisable(newValue == null));
-        AppState.selectedVerein.addListener(selectedClubListener);
         gridLaeufe.sceneProperty().addListener((observable, oldScene, newScene) -> {
-            if (newScene == null) {
+            if (oldScene != null) {
                 AppState.selectedVerein.removeListener(selectedClubListener);
+            }
+            if (newScene != null) {
+                AppState.selectedVerein.addListener(selectedClubListener);
+                if (!calculating) {
+                    refreshTeams(true);
+                    refreshGrid();
+                }
             }
         });
         loadCompetitions(true);
@@ -120,8 +141,23 @@ public class CompetitionController {
             if (pauseGap < 0) {
                 throw new IllegalArgumentException("Die Pausenlänge darf nicht negativ sein.");
             }
-            String result = LinearProgramming.toStringsimplexXBnB(connection, club, competition,
-                    selectedGender == Geschlecht.MAENNLICH, pauseGap);
+            boolean isMale = selectedGender == Geschlecht.MAENNLICH;
+            startTeamCalculation(club, competition, pauseGap, isMale);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showError("Die Mannschaft konnte nicht berechnet und gespeichert werden.", e);
+        }
+    }
+
+    private void startTeamCalculation(Verein club, Wettkampf competition, int pauseGap, boolean isMale) {
+        Task<String> task = new Task<>() {
+            @Override
+            protected String call() throws Exception {
+                return LinearProgramming.toStringsimplexXBnB(connection, club, competition, isMale, pauseGap);
+            }
+        };
+        task.setOnSucceeded(event -> {
+            stopCalculationProgress();
+            String result = task.getValue();
             refreshTeams(false);
             String teamNamePrefix = "Mannschaft \"";
             int nameStart = result.indexOf(teamNamePrefix);
@@ -133,10 +169,49 @@ public class CompetitionController {
                         .findFirst()
                         .ifPresent(team -> mannschaftListView.getSelectionModel().select(team));
             }
-            showInfo(result);
-        } catch (SQLException | IllegalArgumentException | IllegalStateException e) {
-            showError("Die Mannschaft konnte nicht berechnet und gespeichert werden.", e);
+            showInfo("Optimale Teamaufstellung für die noch verfügbaren Schwimmer gefunden.");
+        });
+        task.setOnFailed(event -> {
+            stopCalculationProgress();
+            showError("Die Mannschaft konnte nicht berechnet und gespeichert werden.", task.getException());
+        });
+
+        startCalculationProgress();
+        Thread calculationThread = new Thread(task, "team-optimization");
+        calculationThread.setDaemon(true);
+        calculationThread.start();
+    }
+
+    private void startCalculationProgress() {
+        calculating = true;
+        centerContent.setDisable(true);
+        rightContent.setDisable(true);
+        calculationProgress.setManaged(true);
+        calculationProgress.setVisible(true);
+        progressBarBerechnung.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+        calculationStartedAt = System.nanoTime();
+        updateCalculationElapsedTime();
+        calculationTimer = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateCalculationElapsedTime()));
+        calculationTimer.setCycleCount(Timeline.INDEFINITE);
+        calculationTimer.play();
+    }
+
+    private void updateCalculationElapsedTime() {
+        long elapsedSeconds = (System.nanoTime() - calculationStartedAt) / 1_000_000_000;
+        lblBerechnungsstatus.setText("Berechnung läuft seit " + elapsedSeconds + " s …");
+    }
+
+    private void stopCalculationProgress() {
+        calculating = false;
+        if (calculationTimer != null) {
+            calculationTimer.stop();
+            calculationTimer = null;
         }
+        centerContent.setDisable(false);
+        rightContent.setDisable(false);
+        calculationProgress.setVisible(false);
+        calculationProgress.setManaged(false);
+        progressBarBerechnung.setProgress(0);
     }
 
     private void chooseGender(ToggleButton selectedButton, Geschlecht gender) {
@@ -367,7 +442,7 @@ public class CompetitionController {
         new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK).showAndWait();
     }
 
-    private void showError(String message, Exception error) {
+    private void showError(String message, Throwable error) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message + "\n" + error.getMessage(), ButtonType.OK);
         alert.setHeaderText("Fehler");
         alert.showAndWait();

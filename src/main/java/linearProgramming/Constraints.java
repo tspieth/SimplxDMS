@@ -34,35 +34,57 @@ public class Constraints {
         }
         H h = new H();
 
-        // (1) Each position j0 less than 1 athlete: sum_i x[i,j0] = 1
+        // (1) Each position j0 has at most one athlete: sum_i x[i,j0] <= 1
         for (int j0 = 0; j0 < m.positions; j0++) {
             double[] row = new double[n];
-            for (int i = 0; i < m.numberAthletes; i++)
-                row[m.var(i, j0)] = 1.0;
+            for (int i = 0; i < m.numberAthletes; i++) {
+                int variable = m.var(i, j0);
+                if (variable >= 0) {
+                    row[variable] = 1.0;
+                }
+            }
             h.addLe(row, 1.0);
         }
 
         // (2) Max total per athlete: sum_j x[i,j] <= 5
         for (int i = 0; i < m.numberAthletes; i++) {
             double[] row = new double[n];
-            for (int j0 = 0; j0 < m.positions; j0++)
-                row[m.var(i, j0)] = 1.0;
-            h.addLe(row, m.maxTotal);
+            for (int j0 = 0; j0 < m.positions; j0++) {
+                int variable = m.var(i, j0);
+                if (variable >= 0) {
+                    row[variable] = 1.0;
+                }
+            }
+            if (hasNonZero(row)) {
+                h.addLe(row, m.maxTotal);
+            }
         }
 
         // (3) Max per section per athlete: <= 3
         for (int i = 0; i < m.numberAthletes; i++) {
             // section 1 (0..16)
             double[] r1 = new double[n];
-            for (int j0 = 0; j0 < m.positionsPerSection; j0++)
-                r1[m.var(i, j0)] = 1.0;
-            h.addLe(r1, m.maxPerSection);
+            for (int j0 = 0; j0 < m.positionsPerSection; j0++) {
+                int variable = m.var(i, j0);
+                if (variable >= 0) {
+                    r1[variable] = 1.0;
+                }
+            }
+            if (hasNonZero(r1)) {
+                h.addLe(r1, m.maxPerSection);
+            }
 
             // section 2 (17..33)
             double[] r2 = new double[n];
-            for (int j0 = m.positionsPerSection; j0 < m.positions; j0++)
-                r2[m.var(i, j0)] = 1.0;
-            h.addLe(r2, m.maxPerSection);
+            for (int j0 = m.positionsPerSection; j0 < m.positions; j0++) {
+                int variable = m.var(i, j0);
+                if (variable >= 0) {
+                    r2[variable] = 1.0;
+                }
+            }
+            if (hasNonZero(r2)) {
+                h.addLe(r2, m.maxPerSection);
+            }
         }
 
         // (4) Same index across sections at most once, excluding special index 8
@@ -73,18 +95,26 @@ public class Constraints {
                 if (idx == 7)
                     continue;
                 double[] row = new double[n];
-                row[m.var(i, idx)] = 1.0;
-                row[m.var(i, idx + m.positionsPerSection)] = 1.0;
-                h.addLe(row, 1.0);
+                int firstVariable = m.var(i, idx);
+                int secondVariable = m.var(i, idx + m.positionsPerSection);
+                if (firstVariable >= 0 && secondVariable >= 0) {
+                    row[firstVariable] = 1.0;
+                    row[secondVariable] = 1.0;
+                    h.addLe(row, 1.0);
+                }
             }
         }
 
         // (5) 1500/800 exclusion: x(i,8) + x(i,25) <= 1 -> j0=7 and j0=24
         for (int i = 0; i < m.numberAthletes; i++) {
             double[] row = new double[n];
-            row[m.var(i, m.special1500_j0)] = 1.0;
-            row[m.var(i, m.special800_j0)] = 1.0;
-            h.addLe(row, 1.0);
+            int firstVariable = m.var(i, m.special1500_j0);
+            int secondVariable = m.var(i, m.special800_j0);
+            if (firstVariable >= 0 && secondVariable >= 0) {
+                row[firstVariable] = 1.0;
+                row[secondVariable] = 1.0;
+                h.addLe(row, 1.0);
+            }
         }
 
         // (6) Pause gap within each section: for d=1..g, no starts within d
@@ -99,9 +129,13 @@ public class Constraints {
                             if (k2 >= m.positionsPerSection)
                                 break;
                             double[] row = new double[n];
-                            row[m.var(i, base + k)] = 1.0;
-                            row[m.var(i, base + k2)] = 1.0;
-                            h.addLe(row, 1.0);
+                            int firstVariable = m.var(i, base + k);
+                            int secondVariable = m.var(i, base + k2);
+                            if (firstVariable >= 0 && secondVariable >= 0) {
+                                row[firstVariable] = 1.0;
+                                row[secondVariable] = 1.0;
+                                h.addLe(row, 1.0);
+                            }
                         }
                     }
                 }
@@ -116,5 +150,14 @@ public class Constraints {
             b[i] = rhs.get(i);
         }
         return new Constraints(A, b);
+    }
+
+    private static boolean hasNonZero(double[] row) {
+        for (double value : row) {
+            if (value != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 }

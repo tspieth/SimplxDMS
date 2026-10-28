@@ -75,6 +75,8 @@ public class LinearProgramming {
                     continue;
                 if (perSec[i][sec] >= m.maxPerSection)
                     continue;
+                if (m.var(i, j0) < 0)
+                    continue;
 
                 // index uniqueness across both sections
                 if (idx != 7) {
@@ -133,6 +135,9 @@ public class LinearProgramming {
     }
 
     public static Solution branchAndBound(SwimModel m, Constraints base) {
+        if (m.nVars() == 0) {
+            return new Solution(Double.NEGATIVE_INFINITY, null);
+        }
         Solution incumbent = greedyInitial(m);
         double bestValue = incumbent.bestValue;
         double[] bestX = incumbent.bestX;
@@ -213,7 +218,11 @@ public class LinearProgramming {
             int bestI = -1;
             double bestV = -1;
             for (int i = 0; i < m.numberAthletes; i++) {
-                double v = x[m.var(i, j0)];
+                int variable = m.var(i, j0);
+                if (variable < 0) {
+                    continue;
+                }
+                double v = x[variable];
                 if (v > bestV) {
                     bestV = v;
                     bestI = i;
@@ -267,7 +276,8 @@ public class LinearProgramming {
             for (int position = 0; position < 34; position++) {
                 int swimmerIndex = -1;
                 for (int swimmer = 0; swimmer < points.length; swimmer++) {
-                    if (solution.bestX[model.var(swimmer, position)] > 0.5) {
+                    int variable = model.var(swimmer, position);
+                    if (variable >= 0 && solution.bestX[variable] > 0.5) {
                         swimmerIndex = swimmer;
                         break;
                     }
@@ -307,19 +317,20 @@ public class LinearProgramming {
         Constraints base = Constraints.buildBaseConstraints(model);
 
         Solution sol = branchAndBound(model, base);
-        if (sol.bestX == null) {
-            throw new IllegalStateException("Für die freien Schwimmer wurde keine zulässige Mannschaft gefunden.");
-        }
         int[] assign = decodeAssignment(model, sol.bestX);
         StringBuilder sb = new StringBuilder();
         int[] assignedSwimmerIds = new int[34];
         int[] assignedEventIndexes = new int[34];
+        Arrays.fill(assignedSwimmerIds, -1);
         int totalPoints = 0;
         for (int j0 = 0; j0 < 34; j0++) {
             int eventIndex = simpleOrder[j0];
             Swimmer s = club.getRowNumberToSwimmer().get(assign[j0]);
             if (s == null) {
-                throw new IllegalStateException("Der Optimierer hat eine unvollständige Mannschaft geliefert.");
+                assignedEventIndexes[j0] = eventIndex;
+                sb.append(String.format("Abschnitt%d | %-6s | UNBESETZT%n",
+                        j0 < 17 ? 1 : 2, SwimmingEvent.values()[eventIndex].getDisplayName()));
+                continue;
             }
             String swimmerName = s.getName();
             int points = Math.max(0, s.getPointsForEventIndex(eventIndex));

@@ -228,7 +228,6 @@ public class SwimmerController {
                 Leistung fastest = fastestTimes.get(discipline.getId());
                 if (fastest != null) {
                     String formattedTime = formatTime(fastest.getZeit());
-                    time.setText(formattedTime);
                     time.setInputDigits(formattedTime.replaceAll("\\D", ""));
                 }
                 timeFields.put(discipline, time);
@@ -499,10 +498,11 @@ public class SwimmerController {
      */
     private static final class TimeField extends TextField {
         private String inputDigits = "";
+        private boolean formatting;
 
         private TimeField() {
             setTextFormatter(new TextFormatter<String>(change -> {
-                if (!change.isContentChange()) {
+                if (formatting || !change.isContentChange()) {
                     return change;
                 }
                 String insertedDigits = change.getText().replaceAll("\\D", "");
@@ -523,21 +523,24 @@ public class SwimmerController {
                     inputDigits = inputDigits.substring(0, inputDigits.length() - 1);
                 }
 
-                if (inputDigits.isEmpty()) {
-                    change.setRange(0, change.getControlText().length());
-                    change.setText("");
-                    change.selectRange(0, 0);
-                    return change;
-                }
-
-                String digits = inputDigits + "0".repeat(6 - inputDigits.length());
-                String formatted = digits.substring(0, 2) + ":" + digits.substring(2, 4)
-                        + "," + digits.substring(4, 6);
                 change.setRange(0, change.getControlText().length());
+                String formatted = formatPartialTime(inputDigits);
                 change.setText(formatted);
                 change.selectRange(formatted.length(), formatted.length());
                 return change;
             }));
+            focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+                inputDigits = getText().replaceAll("\\D", "");
+                if (isFocused) {
+                    setTextWithoutFiltering(formatPartialTime(inputDigits));
+                } else if (!inputDigits.isEmpty()) {
+                    String digits = inputDigits + "0".repeat(6 - inputDigits.length());
+                    inputDigits = digits;
+                    String formatted = digits.substring(0, 2) + ":" + digits.substring(2, 4)
+                            + "," + digits.substring(4, 6);
+                    setTextWithoutFiltering(formatted);
+                }
+            });
         }
 
         /**
@@ -547,6 +550,30 @@ public class SwimmerController {
          */
         private void setInputDigits(String digits) {
             inputDigits = digits;
+            String paddedDigits = digits + "0".repeat(6 - digits.length());
+            String formatted = paddedDigits.substring(0, 2) + ":" + paddedDigits.substring(2, 4)
+                    + "," + paddedDigits.substring(4, 6);
+            setTextWithoutFiltering(formatted);
+        }
+
+        private String formatPartialTime(String digits) {
+            StringBuilder formatted = new StringBuilder(digits);
+            if (digits.length() >= 2) {
+                formatted.insert(2, ':');
+            }
+            if (digits.length() >= 4) {
+                formatted.insert(5, ',');
+            }
+            return formatted.toString();
+        }
+
+        private void setTextWithoutFiltering(String value) {
+            formatting = true;
+            try {
+                setText(value);
+            } finally {
+                formatting = false;
+            }
         }
     }
 }

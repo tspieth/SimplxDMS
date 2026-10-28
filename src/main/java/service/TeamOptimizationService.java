@@ -1,7 +1,9 @@
 package service;
 
 import database.dao.DisziplinDao;
+import database.dao.FinaReferenceTimeDAO;
 import database.dao.LaufDao;
+import database.dao.LeistungDao;
 import database.dao.MannschaftDao;
 import database.dao.SchwimmerDao;
 import database.dao.StartDao;
@@ -39,6 +41,9 @@ public class TeamOptimizationService {
         if (club == null || competition == null) {
             throw new IllegalArgumentException("Bitte einen Verein und einen Wettkampf auswählen.");
         }
+        if (pauseGap < 0) {
+            throw new IllegalArgumentException("Die Pausenlänge darf nicht negativ sein.");
+        }
         Geschlecht gender = isMale ? Geschlecht.MAENNLICH : Geschlecht.WEIBLICH;
         SchwimmerDao swimmerDao = new SchwimmerDao(connection);
         List<Schwimmer> candidates = swimmerDao.findUnassignedByVereinUndGeschlecht(
@@ -47,7 +52,7 @@ public class TeamOptimizationService {
             throw new IllegalStateException("Keine freien Schwimmer in der Datenbank gefunden.");
         }
 
-        OptimizationInput input = createOptimizationInput(candidates, isMale);
+        OptimizationInput input = createOptimizationInput(candidates, isMale, pauseGap);
         LinearProgramming.OptimizationResult result = LinearProgramming.toStringsimplexXBnB(
                 input.points(), input.swimmerIds(), input.swimmerNames(), input.eventIndexes(), pauseGap);
         int[] runIds = resolveRuns(competition.getId(), gender, result);
@@ -84,7 +89,7 @@ public class TeamOptimizationService {
         }
     }
 
-    private OptimizationInput createOptimizationInput(List<Schwimmer> candidates, boolean isMale)
+    private OptimizationInput createOptimizationInput(List<Schwimmer> candidates, boolean isMale, int pauseGap)
             throws SQLException {
         DisziplinDao disziplinDao = new DisziplinDao(connection);
         Map<DisciplineKey, Integer> disciplineIds = new HashMap<>();
@@ -101,31 +106,56 @@ public class TeamOptimizationService {
             eventDisciplineIds.put(event.getIndex(), disciplineId);
         }
 
-        PunkteRechner punkteRechner = new PunkteRechner(connection);
         int[] eventIndexes = eventOrder(isMale);
         double[][] points = new double[candidates.size()][34];
         int[] swimmerIds = new int[candidates.size()];
         String[] swimmerNames = new String[candidates.size()];
+        Map<Integer, Integer> rowBySwimmerId = new HashMap<>();
         for (int swimmerIndex = 0; swimmerIndex < candidates.size(); swimmerIndex++) {
             Schwimmer swimmer = candidates.get(swimmerIndex);
             swimmerIds[swimmerIndex] = swimmer.getId();
             swimmerNames[swimmerIndex] = swimmer.toString();
-            for (SwimmingEvent event : SwimmingEvent.values()) {
-                int disciplineId = eventDisciplineIds.get(event.getIndex());
-                DisciplineKey key = disciplineFor(event);
-                PunkteRechner.PunktErgebnis score = punkteRechner.berechne(swimmer.getId(), disciplineId,
-                        isMale ? Geschlecht.MAENNLICH : Geschlecht.WEIBLICH,
-                        key.distance(), key.lage());
-                if ("Keine FINA-Zeit hinterlegt".equals(score.hinweis())) {
-                    throw new SQLException("FINA-Referenzzeit fehlt für " + event.getDisplayName()
-                            + (isMale ? " (männlich)." : " (weiblich)."));
+            rowBySwimmerId.put(swimmer.getId(), swimmerIndex);
+        }
+
+        List<Integer> disciplineIdList = List.copyOf(eventDisciplineIds.values());
+        Map<Integer, Map<Integer, Double>> bestTimes = new LeistungDao(connection)
+                .findBestTimesSeconds(candidates.stream().map(Schwimmer::getId).toList(), disciplineIdList);
+        Map<Integer, Map<Geschlecht, Double>> referenceTimes = new FinaReferenceTimeDAO(connection).findAll();
+        int topCount = (int) Math.min(candidates.size(), 8L + pauseGap);
+
+        for (SwimmingEvent event : SwimmingEvent.values()) {
+            int disciplineId = eventDisciplineIds.get(event.getIndex());
+            Double referenceTime = referenceTimes.getOrDefault(disciplineId, Map.of()).get(
+                    isMale ? Geschlecht.MAENNLICH : Geschlecht.WEIBLICH);
+            if (referenceTime == null || referenceTime <= 0) {
+                throw new SQLException("FINA-Referenzzeit fehlt für " + event.getDisplayName()
+                        + (isMale ? " (männlich)." : " (weiblich)."));
+            }
+
+            List<EventCandidate> eventCandidates = new java.util.ArrayList<>();
+            for (Map.Entry<Integer, Map<Integer, Double>> swimmerTimes : bestTimes.entrySet()) {
+                Double time = swimmerTimes.getValue().get(disciplineId);
+                if (time == null || time <= 0) {
+                    continue;
                 }
-                int firstPosition = positionForEvent(event, isMale);
-                if (event.getDisplayName().equals("1500K") || event.getDisplayName().equals("800K")) {
-                    points[swimmerIndex][firstPosition] = score.punkte();
-                } else {
-                    points[swimmerIndex][firstPosition] = score.punkte();
-                    points[swimmerIndex][firstPosition + 17] = score.punkte();
+                Integer row = rowBySwimmerId.get(swimmerTimes.getKey());
+                if (row != null) {
+                    long score = (int) (Math.pow(referenceTime / time, 3) * 1000);
+                    eventCandidates.add(new EventCandidate(row, time, score));
+                }
+            }
+            eventCandidates.sort(java.util.Comparator.comparingDouble(EventCandidate::seconds)
+                    .thenComparingInt(EventCandidate::swimmerIndex));
+
+            int firstPosition = positionForEvent(event, isMale);
+            int lastPosition = event.getDisplayName().equals("1500K") || event.getDisplayName().equals("800K")
+                    ? firstPosition : firstPosition + 17;
+            for (int i = 0; i < Math.min(topCount, eventCandidates.size()); i++) {
+                EventCandidate candidate = eventCandidates.get(i);
+                points[candidate.swimmerIndex()][firstPosition] = candidate.points();
+                if (lastPosition != firstPosition) {
+                    points[candidate.swimmerIndex()][lastPosition] = candidate.points();
                 }
             }
         }
@@ -245,6 +275,9 @@ public class TeamOptimizationService {
     }
 
     private record RunKey(int section, DisciplineKey discipline) {
+    }
+
+    private record EventCandidate(int swimmerIndex, double seconds, long points) {
     }
 
     private record OptimizationInput(double[][] points, int[] swimmerIds, String[] swimmerNames,
