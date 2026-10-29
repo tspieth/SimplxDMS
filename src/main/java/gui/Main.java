@@ -3,12 +3,15 @@ package gui;
 import database.DatabaseManager;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.image.Image;
 import service.StartupService;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+
+import java.util.Objects;
 
 public class Main extends Application {
 
@@ -36,6 +39,9 @@ public class Main extends Application {
 
         Scene scene = new Scene(root, 1200, 720);
         primaryStage.setTitle("SimplxDMS");
+        primaryStage.getIcons().add(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/icons/app.png")))
+        );
         primaryStage.setScene(scene);
         primaryStage.show();
         if (!startupImportErrors.isEmpty()) {
