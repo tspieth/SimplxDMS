@@ -80,6 +80,12 @@ public class FinaReferenceTimeDAO {
         }
     }
 
+    public void deleteAll() throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("DELETE FROM fina_referenzzeit");
+        }
+    }
+
     /**
      * Updates an existing FINA reference time for backwards compatibility with import callers.
      *

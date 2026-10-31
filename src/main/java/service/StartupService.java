@@ -14,6 +14,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -30,8 +32,45 @@ public class StartupService {
 
     public int importBundledReferenceTimesIfMissing() throws IOException, SQLException {
         int imported = 0;
-        DisziplinDao disziplinDao = new DisziplinDao(connection);
         FinaReferenceTimeDAO referenceTimeDao = new FinaReferenceTimeDAO(connection);
+        for (BundledReferenceTime referenceTime : readBundledReferenceTimes()) {
+            var existing = referenceTimeDao.findTimeSeconds(referenceTime.disciplineId(), referenceTime.gender());
+            if (existing.isEmpty() || existing.getAsDouble() <= 0) {
+                referenceTimeDao.upsert(referenceTime.disciplineId(), referenceTime.gender(), referenceTime.seconds());
+                imported++;
+            }
+        }
+        return imported;
+    }
+
+    public int restoreBundledReferenceTimes() throws IOException, SQLException {
+        List<BundledReferenceTime> defaults = readBundledReferenceTimes();
+        boolean oldAutoCommit = connection.getAutoCommit();
+        try {
+            connection.setAutoCommit(false);
+            FinaReferenceTimeDAO referenceTimeDao = new FinaReferenceTimeDAO(connection);
+            referenceTimeDao.deleteAll();
+            for (BundledReferenceTime referenceTime : defaults) {
+                referenceTimeDao.upsert(referenceTime.disciplineId(), referenceTime.gender(),
+                        referenceTime.seconds());
+            }
+            connection.commit();
+            return defaults.size();
+        } catch (SQLException | RuntimeException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackError) {
+                e.addSuppressed(rollbackError);
+            }
+            throw e;
+        } finally {
+            connection.setAutoCommit(oldAutoCommit);
+        }
+    }
+
+    private List<BundledReferenceTime> readBundledReferenceTimes() throws IOException, SQLException {
+        List<BundledReferenceTime> referenceTimes = new ArrayList<>();
+        DisziplinDao disziplinDao = new DisziplinDao(connection);
         try (InputStream input = StartupService.class.getResourceAsStream("/data/ref_times.csv")) {
             if (input == null) {
                 throw new IOException("Die Referenzzeitdatei /data/ref_times.csv fehlt.");
@@ -59,31 +98,26 @@ public class StartupService {
                     }
                     SchwimmLage lage = parseStroke(columns[0], lineNumber);
                     int distance = parseDistance(columns[1], lineNumber);
-                    int disciplineId;
-                    try {
-                        var discipline = disziplinDao.findByLageUndDistanz(lage, distance);
-                        if (discipline == null) {
-                            throw invalidReferenceRow(lineNumber,
-                                    "Keine Disziplin für " + lage + " " + distance + "m vorhanden.");
-                        }
-                        disciplineId = discipline.getId();
-                    } catch (IllegalArgumentException e) {
-                        throw invalidReferenceRow(lineNumber, e.getMessage());
+                    var discipline = disziplinDao.findByLageUndDistanz(lage, distance);
+                    if (discipline == null) {
+                        throw invalidReferenceRow(lineNumber,
+                                "Keine Disziplin für " + lage + " " + distance + "m vorhanden.");
                     }
-
                     for (Geschlecht gender : Geschlecht.values()) {
                         int secondsColumn = gender == Geschlecht.MAENNLICH ? 3 : 5;
-                        double seconds = parseSeconds(columns[secondsColumn], lineNumber);
-                        var existing = referenceTimeDao.findTimeSeconds(disciplineId, gender);
-                        if (existing.isEmpty() || existing.getAsDouble() <= 0) {
-                            referenceTimeDao.upsert(disciplineId, gender, seconds);
-                            imported++;
-                        }
+                        referenceTimes.add(new BundledReferenceTime(discipline.getId(), gender,
+                                parseSeconds(columns[secondsColumn], lineNumber)));
                     }
                 }
             }
         }
-        return imported;
+        if (referenceTimes.isEmpty()) {
+            throw new IOException("Die Referenzzeitdatei /data/ref_times.csv enthält keine Zeiten.");
+        }
+        return List.copyOf(referenceTimes);
+    }
+
+    private record BundledReferenceTime(int disciplineId, Geschlecht gender, double seconds) {
     }
 
     public WettkampfImportService.ImportErgebnis importBundledIfEmpty()

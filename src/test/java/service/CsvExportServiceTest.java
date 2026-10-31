@@ -209,6 +209,27 @@ class CsvExportServiceTest {
         assertTrue(new MannschaftExportService(connection).ladeZeilen(team, competition, Geschlecht.WEIBLICH).isEmpty());
     }
 
+    @Test
+    void restoreBundledReferenceTimesReplacesCustomAndStaleEntries() throws Exception {
+        DisziplinDao disciplineDao = new DisziplinDao(connection);
+        Disziplin freestyle50 = disciplineDao.findByLageUndDistanz(SchwimmLage.FREISTIL, 50);
+        Disziplin customDiscipline = new Disziplin(0, SchwimmLage.FREISTIL, 25);
+        disciplineDao.insert(customDiscipline);
+
+        FinaReferenceTimeDAO referenceTimeDao = new FinaReferenceTimeDAO(connection);
+        referenceTimeDao.upsert(freestyle50.getId(), Geschlecht.MAENNLICH, 123.45);
+        referenceTimeDao.upsert(customDiscipline.getId(), Geschlecht.MAENNLICH, 10.0);
+
+        int restored = new StartupService(connection).restoreBundledReferenceTimes();
+        var storedTimes = referenceTimeDao.findAll();
+
+        assertEquals(36, restored);
+        assertEquals(18, storedTimes.size());
+        assertEquals(19.90, storedTimes.get(freestyle50.getId()).get(Geschlecht.MAENNLICH));
+        assertEquals(22.83, storedTimes.get(freestyle50.getId()).get(Geschlecht.WEIBLICH));
+        assertFalse(storedTimes.containsKey(customDiscipline.getId()));
+    }
+
     private int addRun(Wettkampf competition, Disziplin discipline, int number, int section) throws Exception {
         Programmpunkt point = new Programmpunkt(0, competition.getId(), number, ProgrammpunktTyp.LAUF);
         new ProgrammpunktDao(connection).insert(point);

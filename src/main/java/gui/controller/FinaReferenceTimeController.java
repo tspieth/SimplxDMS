@@ -6,6 +6,7 @@ import database.dao.FinaReferenceTimeDAO;
 import database.model.Disziplin;
 import database.model.Geschlecht;
 import database.model.SchwimmLage;
+import service.StartupService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -17,6 +18,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Comparator;
@@ -39,6 +41,7 @@ public class FinaReferenceTimeController {
     @FXML private ToggleButton toggleWeiblich;
     @FXML private ToggleGroup genderToggleGroup;
     @FXML private Button btnAbbrechen;
+    @FXML private Button btnStandardzeiten;
     @FXML private VBox spalte1;
     @FXML private VBox spalte2;
     @FXML private VBox spalte3;
@@ -77,6 +80,8 @@ public class FinaReferenceTimeController {
         });
         btnSpeichern.setOnAction(event -> save());
         btnAbbrechen.setOnAction(event -> cancel());
+        btnStandardzeiten.setOnAction(event -> restoreDefaults());
+        btnStandardzeiten.setDisable(true);
 
         try {
             List<Disziplin> disciplines = new DisziplinDao(connection).findAll();
@@ -85,9 +90,39 @@ public class FinaReferenceTimeController {
             populateColumns(disciplines, storedTimes);
             renderGender(Geschlecht.MAENNLICH);
             ready = true;
+            btnStandardzeiten.setDisable(false);
         } catch (SQLException | IllegalStateException e) {
             btnSpeichern.setDisable(true);
             showError("Die FINA-Referenzzeiten konnten nicht geladen werden.", e);
+        }
+    }
+
+    private void restoreDefaults() {
+        if (!ready) {
+            return;
+        }
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                "Alle gespeicherten FINA-Referenzzeiten werden durch die Standardwerte aus "
+                        + "/data/ref_times.csv ersetzt. Nicht gespeicherte Änderungen gehen verloren.",
+                ButtonType.YES, ButtonType.NO);
+        confirmation.setHeaderText("Standardzeiten wiederherstellen?");
+        if (stage != null) {
+            confirmation.initOwner(stage);
+            confirmation.initModality(javafx.stage.Modality.WINDOW_MODAL);
+        }
+        if (confirmation.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) {
+            return;
+        }
+
+        try {
+            int restored = new StartupService(connection).restoreBundledReferenceTimes();
+            valuesByGender.values().forEach(Map::clear);
+            populateTimeCache(new FinaReferenceTimeDAO(connection).findAll());
+            renderGender(currentGender);
+            new Alert(Alert.AlertType.INFORMATION,
+                    restored + " Standard-Referenzzeiten wurden wiederhergestellt.", ButtonType.OK).showAndWait();
+        } catch (IOException | SQLException e) {
+            showError("Die Standard-Referenzzeiten konnten nicht wiederhergestellt werden.", e);
         }
     }
 

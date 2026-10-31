@@ -40,6 +40,7 @@
         </ScrollPane>
         <HBox spacing="8" alignment="CENTER_RIGHT">
             <children>
+                <Button fx:id="btnStandardzeiten" text="Standardzeiten wiederherstellen"/>
                 <Button fx:id="btnAbbrechen" text="Abbrechen"/>
                 <Button fx:id="btnSpeichern" text="Speichern"/>
             </children>
