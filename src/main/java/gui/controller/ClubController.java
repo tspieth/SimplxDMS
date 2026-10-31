@@ -6,6 +6,8 @@ import database.dao.VereinDao;
 import database.model.Schwimmer;
 import database.model.Verein;
 import gui.AppState;
+import gui.CsvExportDialogSupport;
+import javafx.concurrent.Task;
 import javafx.stage.FileChooser;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -24,6 +26,9 @@ import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.scene.paint.Color;
 import service.SchwimmerCsvImportService;
+import service.CsvWriter;
+import service.SchwimmerCsvExportService;
+import service.SchwimmerCsvFormat;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,10 +49,12 @@ public class ClubController {
     @FXML private ListView<Verein> vereinAuswahlListView;
     @FXML private Button btnVereinBearbeiten;
     @FXML private Button btnSchwimmerAusDatei;
+    @FXML private Button btnVereinExportieren;
     @FXML private Label lblVereinSchwimmerHinweis;
     @FXML private Label lblVereineHinweis;
 
     private final Connection connection = DatabaseManager.getInstance().getConnection();
+    private boolean exporting;
 
     /**
      * Loads clubs, connects selection changes to global application state, and renders rows.
@@ -120,6 +127,7 @@ public class ClubController {
         btnVereinBearbeiten.setDisable(true);
         btnVereinBearbeiten.setOnAction(event -> editClub(AppState.getSelectedClub()));
         btnSchwimmerAusDatei.setDisable(true);
+        btnVereinExportieren.setDisable(true);
         loadClubs();
         updateButtons();
     }
@@ -245,6 +253,74 @@ public class ClubController {
         }
     }
 
+    @FXML
+    private void onVereinExportierenClick() {
+        Verein club = AppState.getSelectedClub();
+        if (club == null || exporting) {
+            return;
+        }
+        exporting = true;
+        updateButtons();
+
+        Task<List<List<String>>> loadTask = new Task<>() {
+            @Override
+            protected List<List<String>> call() throws SQLException {
+                return new SchwimmerCsvExportService(connection).ladeZeilen(club);
+            }
+        };
+        loadTask.setOnSucceeded(event -> {
+            List<List<String>> rows = loadTask.getValue();
+            if (rows.size() <= 1) {
+                exporting = false;
+                updateButtons();
+                showInfo("Der Verein hat keine Schwimmer/innen");
+                return;
+            }
+            String cleanedClubName = CsvExportDialogSupport.sanitizeFileName(club.getName());
+            String proposedName = (cleanedClubName.isEmpty() ? "Verein" : cleanedClubName) + "_Schwimmer_innen.csv";
+            Path target = CsvExportDialogSupport.chooseTarget(
+                    btnVereinExportieren.getScene().getWindow(), "Verein exportieren", proposedName);
+            if (target == null) {
+                exporting = false;
+                updateButtons();
+                return;
+            }
+            long swimmerCount = rows.stream().skip(1)
+                    .filter(row -> !row.get(SchwimmerCsvFormat.GENDER).isEmpty()).count();
+            Task<Void> writeTask = new Task<>() {
+                @Override
+                protected Void call() throws IOException {
+                    CsvWriter.writeAtomically(target, rows);
+                    return null;
+                }
+            };
+            writeTask.setOnSucceeded(writeEvent -> {
+                CsvExportDialogSupport.rememberSuccessfulExport(target);
+                exporting = false;
+                updateButtons();
+                showInfo(swimmerCount + " Schwimmer/innen wurden exportiert.\n" + target.toAbsolutePath());
+            });
+            writeTask.setOnFailed(writeEvent -> {
+                exporting = false;
+                updateButtons();
+                showError("Die Schwimmer/innen konnten nicht exportiert werden.", writeTask.getException());
+            });
+            startTask(writeTask, "verein-csv-export");
+        });
+        loadTask.setOnFailed(event -> {
+            exporting = false;
+            updateButtons();
+            showError("Die Schwimmer/innen konnten nicht für den Export geladen werden.", loadTask.getException());
+        });
+        startTask(loadTask, "verein-csv-laden");
+    }
+
+    private void startTask(Task<?> task, String name) {
+        Thread thread = new Thread(task, name);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     /**
      * Opens a club form and saves name/color changes immediately.
      *
@@ -359,6 +435,7 @@ public class ClubController {
         boolean noClubSelected = AppState.getSelectedClub() == null;
         btnVereinBearbeiten.setDisable(noClubSelected);
         btnSchwimmerAusDatei.setDisable(noClubSelected);
+        btnVereinExportieren.setDisable(noClubSelected || exporting);
     }
 
     /**
@@ -401,9 +478,10 @@ public class ClubController {
      * @param message user-friendly operation description
      * @param error database exception
      */
-    private void showError(String message, Exception error) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, message + "\n" + error.getMessage(), ButtonType.OK);
-        alert.setHeaderText("Datenbankfehler");
+    private void showError(String message, Throwable error) {
+        String details = error == null || error.getMessage() == null ? "" : "\n" + error.getMessage();
+        Alert alert = new Alert(Alert.AlertType.ERROR, message + details, ButtonType.OK);
+        alert.setHeaderText("Fehler");
         alert.showAndWait();
     }
 

@@ -46,6 +46,20 @@ public class LeistungDao {
         return result;
     }
 
+    public java.time.LocalTime findBestTime(int schwimmerId, int disziplinId) throws SQLException {
+        String sql = "SELECT MIN(zeit) AS bestzeit FROM leistung WHERE schwimmer_id = ? AND disziplin_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, schwimmerId);
+            ps.setInt(2, disziplinId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return rs.getObject("bestzeit", java.time.LocalTime.class);
+            }
+        }
+    }
+
     public OptionalDouble findBestTimeSeconds(int schwimmerId, int disziplinId) throws SQLException {
         String sql = "SELECT MIN(zeit) AS bestzeit FROM leistung WHERE schwimmer_id = ? AND disziplin_id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {

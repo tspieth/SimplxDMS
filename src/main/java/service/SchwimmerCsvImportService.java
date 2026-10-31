@@ -9,10 +9,7 @@ import database.model.Schwimmer;
 import database.model.SchwimmLage;
 import database.model.Verein;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -45,57 +42,61 @@ public class SchwimmerCsvImportService {
         List<ImportSchwimmerBuilder> result = new ArrayList<>();
         ImportSchwimmerBuilder current = null;
         int rowNumber = 0;
+        boolean firstRecord = true;
 
-        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                rowNumber++;
-                if (rowNumber == 1 && line.startsWith("\uFEFF")) {
-                    line = line.substring(1);
-                }
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] fields = line.split(";", -1);
-                if (rowNumber == 1 && fields.length >= 6
-                        && fields[0].trim().equalsIgnoreCase("Name")
-                        && fields[1].trim().equalsIgnoreCase("Vorname")) {
-                    continue;
-                }
-                if (fields.length != 6) {
+        for (List<String> record : SemicolonCsvReader.readAll(file)) {
+            rowNumber++;
+            if (record.stream().allMatch(String::isBlank)) {
+                continue;
+            }
+            if (firstRecord && record.size() == SchwimmerCsvFormat.COLUMN_COUNT
+                    && record.get(SchwimmerCsvFormat.NAME).trim().equalsIgnoreCase(
+                            SchwimmerCsvFormat.HEADER.get(SchwimmerCsvFormat.NAME))
+                    && record.get(SchwimmerCsvFormat.FIRST_NAME).trim().equalsIgnoreCase(
+                            SchwimmerCsvFormat.HEADER.get(SchwimmerCsvFormat.FIRST_NAME))) {
+                firstRecord = false;
+                continue;
+            }
+            firstRecord = false;
+            if (record.size() != SchwimmerCsvFormat.COLUMN_COUNT) {
                     throw invalidRow(rowNumber, "Es werden genau sechs durch Semikolon getrennte Spalten erwartet.");
-                }
-                for (int i = 0; i < fields.length; i++) {
-                    fields[i] = fields[i].trim();
-                }
+            }
+            String[] fields = record.toArray(String[]::new);
+            fields[SchwimmerCsvFormat.GENDER] = fields[SchwimmerCsvFormat.GENDER].trim();
+            fields[SchwimmerCsvFormat.BIRTH_YEAR] = fields[SchwimmerCsvFormat.BIRTH_YEAR].trim();
+            fields[SchwimmerCsvFormat.DISCIPLINE] = fields[SchwimmerCsvFormat.DISCIPLINE].trim();
+            fields[SchwimmerCsvFormat.TIME] = fields[SchwimmerCsvFormat.TIME].trim();
 
-                boolean hasIdentity = !fields[0].isEmpty() || !fields[1].isEmpty()
-                        || !fields[2].isEmpty() || !fields[3].isEmpty();
-                if (hasIdentity) {
-                    //Birthyear not necessary
-                    if (fields[0].isEmpty() || fields[1].isEmpty() || fields[2].isEmpty() ) {
-                        throw invalidRow(rowNumber,
-                                "Name, Vorname, Geschlecht  müssen gemeinsam angegeben sein.");
-                    }
+            boolean hasIdentity = !fields[SchwimmerCsvFormat.NAME].isEmpty()
+                    || !fields[SchwimmerCsvFormat.FIRST_NAME].isEmpty()
+                    || !fields[SchwimmerCsvFormat.GENDER].isEmpty()
+                    || !fields[SchwimmerCsvFormat.BIRTH_YEAR].isEmpty();
+            if (hasIdentity) {
+                if (fields[SchwimmerCsvFormat.NAME].isEmpty() || fields[SchwimmerCsvFormat.FIRST_NAME].isEmpty()
+                        || fields[SchwimmerCsvFormat.GENDER].isEmpty()) {
+                    throw invalidRow(rowNumber, "Name, Vorname und Geschlecht müssen gemeinsam angegeben sein.");
+                }
+                LocalDate birthDate = fields[SchwimmerCsvFormat.BIRTH_YEAR].isEmpty()
+                        ? null : parseBirthDate(fields[SchwimmerCsvFormat.BIRTH_YEAR], rowNumber);
+                current = new ImportSchwimmerBuilder(fields[SchwimmerCsvFormat.NAME],
+                        fields[SchwimmerCsvFormat.FIRST_NAME],
+                        parseGender(fields[SchwimmerCsvFormat.GENDER], rowNumber), birthDate);
+                result.add(current);
+            } else if (current == null) {
+                throw invalidRow(rowNumber, "Eine Strecke ist angegeben, bevor ein Schwimmer definiert wurde.");
+            }
 
-                    current = new ImportSchwimmerBuilder(fields[0], fields[1], parseGender(fields[2], rowNumber),
-                            (fields[3] != "" ? parseBirthDate(fields[3], rowNumber): LocalDate.of(1999, 1, 1)));
-                    result.add(current);
-                } else if (current == null) {
-                    throw invalidRow(rowNumber, "Eine Strecke ist angegeben, bevor ein Schwimmer definiert wurde.");
+            if (fields[SchwimmerCsvFormat.DISCIPLINE].isEmpty()) {
+                if (!fields[SchwimmerCsvFormat.TIME].isEmpty()) {
+                    throw invalidRow(rowNumber, "Eine Zeit kann nicht ohne Strecke angegeben werden.");
                 }
-
-                if (fields[4].isEmpty()) {
-                    if (!fields[5].isEmpty()) {
-                        throw invalidRow(rowNumber, "Eine Zeit kann nicht ohne Strecke angegeben werden.");
-                    }
-                    continue;
-                }
-                Discipline discipline = parseDiscipline(fields[4], rowNumber);
-                LocalTime time = fields[5].isEmpty() ? null : parseTime(fields[5], rowNumber);
-                if (time != null) {
-                    current.addPerformance(discipline, time, rowNumber);
-                }
+                continue;
+            }
+            Discipline discipline = parseDiscipline(fields[SchwimmerCsvFormat.DISCIPLINE], rowNumber);
+            LocalTime time = fields[SchwimmerCsvFormat.TIME].isEmpty()
+                    ? null : parseTime(fields[SchwimmerCsvFormat.TIME], rowNumber);
+            if (time != null) {
+                current.addPerformance(discipline, time, rowNumber);
             }
         }
 
@@ -179,8 +180,10 @@ public class SchwimmerCsvImportService {
     }
 
     private LocalDate parseBirthDate(String value, int rowNumber) throws IOException {
-        //Wenn kein Geburtsjahr angegeben soll dieses Standard geburtsjahr angegeben sein
         try {
+            if (value.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                return LocalDate.parse(value);
+            }
             int year = Integer.parseInt(value);
             if (year < 0) {
                 throw new NumberFormatException();
@@ -194,7 +197,7 @@ public class SchwimmerCsvImportService {
                 throw new NumberFormatException();
             }
             return LocalDate.of(year, 1, 1);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException | java.time.DateTimeException e) {
             throw invalidRow(rowNumber, "Ungültiges Geburtsjahr: " + value);
         }
     }
@@ -210,14 +213,10 @@ public class SchwimmerCsvImportService {
         } catch (NumberFormatException e) {
             throw invalidRow(rowNumber, "Ungültige Distanz: " + value);
         }
-        SchwimmLage stroke = switch (matcher.group(2)) {
-            case "K" -> SchwimmLage.FREISTIL;
-            case "B" -> SchwimmLage.BRUST;
-            case "R" -> SchwimmLage.RUECKEN;
-            case "S" -> SchwimmLage.SCHMETTERLING;
-            case "Lg" -> SchwimmLage.LAGEN;
-            default -> throw invalidRow(rowNumber, "Unbekannte Strecke: " + value);
-        };
+        SchwimmLage stroke = SchwimmerCsvFormat.strokeFromCode(matcher.group(2));
+        if (stroke == null) {
+            throw invalidRow(rowNumber, "Unbekannte Strecke: " + value);
+        }
         return new Discipline(stroke, distance);
     }
 

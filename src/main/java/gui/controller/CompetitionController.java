@@ -6,10 +6,13 @@ import database.model.Mannschaft;
 import database.model.Verein;
 import database.model.Wettkampf;
 import gui.AppState;
+import gui.CsvExportDialogSupport;
 import linearProgramming.LinearProgramming;
 import service.WettkampfAnsichtService;
 import service.WettkampfImportService;
 import service.WettkampfService;
+import service.CsvWriter;
+import service.MannschaftExportService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.concurrent.Task;
@@ -65,6 +68,7 @@ public class CompetitionController {
     @FXML private Button btnWettkampfLoeschen;
     @FXML private ListView<Mannschaft> mannschaftListView;
     @FXML private Button btnMannschaftLoeschen;
+    @FXML private Button btnMannschaftExportieren;
     @FXML private Spinner<Integer> spinnerPauseGap;
     @FXML private ToggleButton toggleMaennlich;
     @FXML private ToggleButton toggleWeiblich;
@@ -79,6 +83,7 @@ public class CompetitionController {
     private Timeline calculationTimer;
     private long calculationStartedAt;
     private boolean calculating;
+    private boolean exportingTeam;
     private final ChangeListener<Verein> selectedClubListener =
             (observable, oldClub, newClub) -> {
                 refreshTeams(true);
@@ -107,11 +112,15 @@ public class CompetitionController {
         toggleMaennlich.setOnAction(event -> chooseGender(toggleMaennlich, Geschlecht.MAENNLICH));
         toggleWeiblich.setOnAction(event -> chooseGender(toggleWeiblich, Geschlecht.WEIBLICH));
         btnMannschaftLoeschen.setDisable(true);
+        btnMannschaftExportieren.setDisable(true);
         btnWettkampfLoeschen.setDisable(true);
         spinnerPauseGap.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 60, 2));
         spinnerPauseGap.setEditable(true);
         mannschaftListView.getSelectionModel().selectedItemProperty()
-                .addListener((observable, oldValue, newValue) -> btnMannschaftLoeschen.setDisable(newValue == null));
+                .addListener((observable, oldValue, newValue) -> {
+                    btnMannschaftLoeschen.setDisable(newValue == null);
+                    btnMannschaftExportieren.setDisable(newValue == null || exportingTeam);
+                });
         gridLaeufe.sceneProperty().addListener((observable, oldScene, newScene) -> {
             if (oldScene != null) {
                 AppState.selectedVerein.removeListener(selectedClubListener);
@@ -301,7 +310,7 @@ public class CompetitionController {
                 for (int row = 0; row < events.size(); row++) {
                     WettkampfAnsichtService.LaufZeile event = events.get(row);
                     Label eventLabel = new Label("WK" + event.wettkampfNummer() + " · "
-                            + event.distanz() + " m " + event.lage());
+                            + service.WettkampfDisziplinText.format(event.distanz(), event.lage()));
                     Label assignment = new Label(event.zuordnung());
                     if (event.tooltip() != null) {
                         assignment.setTooltip(new Tooltip(event.tooltip()));
@@ -394,6 +403,82 @@ public class CompetitionController {
     }
 
     @FXML
+    private void onMannschaftExportierenClick() {
+        Mannschaft team = mannschaftListView.getSelectionModel().getSelectedItem();
+        Wettkampf competition = wettkampfComboBox.getValue();
+        if (team == null || competition == null || exportingTeam) {
+            return;
+        }
+        Geschlecht gender = selectedGender;
+        Verein club = AppState.selectedVereinProperty().get();
+        exportingTeam = true;
+        btnMannschaftExportieren.setDisable(true);
+
+        Task<List<List<String>>> loadTask = new Task<>() {
+            @Override
+            protected List<List<String>> call() throws SQLException {
+                return new MannschaftExportService(connection).ladeZeilen(team, competition, gender);
+            }
+        };
+        loadTask.setOnSucceeded(event -> {
+            List<List<String>> rows = loadTask.getValue();
+            if (rows.isEmpty()) {
+                finishTeamExport();
+                showInfo("Keine Zuordnungen für " + genderLabel(gender));
+                return;
+            }
+            String proposedName = (club == null ? "" : club.getName() + "_") + team.getBezeichnung()
+                    + ".csv";
+            Path target = CsvExportDialogSupport.chooseTarget(btnMannschaftExportieren.getScene().getWindow(),
+                    "Mannschaft exportieren", proposedName);
+            if (target == null) {
+                finishTeamExport();
+                return;
+            }
+
+            Task<Void> writeTask = new Task<>() {
+                @Override
+                protected Void call() throws IOException {
+                    CsvWriter.writeAtomically(target, rows);
+                    return null;
+                }
+            };
+            writeTask.setOnSucceeded(writeEvent -> {
+                CsvExportDialogSupport.rememberSuccessfulExport(target);
+                finishTeamExport();
+                String totalPoints = rows.get(rows.size() - 1).get(7);
+                showInfo("Mannschaft „" + team.getBezeichnung() + "“, " + genderLabel(gender)
+                        + ": " + totalPoints + " Punkte\n" + target.toAbsolutePath());
+            });
+            writeTask.setOnFailed(writeEvent -> {
+                finishTeamExport();
+                showError("Die Mannschaft konnte nicht exportiert werden.", writeTask.getException());
+            });
+            startTask(writeTask, "mannschaft-csv-export");
+        });
+        loadTask.setOnFailed(event -> {
+            finishTeamExport();
+            showError("Die Mannschaftsdaten konnten nicht für den Export geladen werden.", loadTask.getException());
+        });
+        startTask(loadTask, "mannschaft-csv-laden");
+    }
+
+    private void finishTeamExport() {
+        exportingTeam = false;
+        btnMannschaftExportieren.setDisable(mannschaftListView.getSelectionModel().getSelectedItem() == null);
+    }
+
+    private void startTask(Task<?> task, String name) {
+        Thread thread = new Thread(task, name);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private String genderLabel(Geschlecht gender) {
+        return gender == Geschlecht.MAENNLICH ? "Männlich" : "Weiblich";
+    }
+
+    @FXML
     private void onWettkampfLoeschenClick() {
         Wettkampf competition = wettkampfComboBox.getValue();
         if (competition == null) {
@@ -443,7 +528,8 @@ public class CompetitionController {
     }
 
     private void showError(String message, Throwable error) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, message + "\n" + error.getMessage(), ButtonType.OK);
+        String details = error == null || error.getMessage() == null ? "" : "\n" + error.getMessage();
+        Alert alert = new Alert(Alert.AlertType.ERROR, message + details, ButtonType.OK);
         alert.setHeaderText("Fehler");
         alert.showAndWait();
     }

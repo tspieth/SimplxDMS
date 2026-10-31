@@ -49,6 +49,8 @@
                         maxWidth="Infinity"/>
                 <Button fx:id="btnSchwimmerAusDatei" text="Schwimmer/innen aus CSV importieren"
                         onAction="#onSchwimmerAusDateiImportierenClick" maxWidth="Infinity"/>
+                <Button fx:id="btnVereinExportieren" text="Verein exportieren"
+                        onAction="#onVereinExportierenClick" maxWidth="Infinity"/>
             </children>
         </VBox>
     </right>

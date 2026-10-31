@@ -68,6 +68,8 @@
                 <ListView fx:id="mannschaftListView" VBox.vgrow="ALWAYS" prefHeight="300"/>
                 <Button fx:id="btnMannschaftLoeschen" text="Mannschaft löschen" maxWidth="Infinity"
                         onAction="#onMannschaftLoeschenClick"/>
+                <Button fx:id="btnMannschaftExportieren" text="Mannschaft exportieren" maxWidth="Infinity"
+                        onAction="#onMannschaftExportierenClick"/>
                 <Label text="Pause zwischen Starts (Events):"/>
                 <Spinner fx:id="spinnerPauseGap" maxWidth="Infinity"/>
                 <Button text="Mannschaft berechnen" maxWidth="Infinity"
